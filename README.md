@@ -57,3 +57,7 @@ Without those capabilities (opened as a plain file, for example), the page falls
 | `engine.js` | Formula engine; works in the browser and in Node |
 | `sample.js` | The example workbook shown on first open |
 | `test.js` | Engine checks; run with `node test.js` |
+
+## License
+
+[MIT](LICENSE)
