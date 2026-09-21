@@ -1,0 +1,1989 @@
+<!doctype html>
+<title>Gridwork</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+:root {
+  --desk: #e8ebe5;
+  --paper: #fcfdfb;
+  --head: #f1f3ee;
+  --line: #dde1da;
+  --line-2: #c6ccc3;
+  --ink: #19201b;
+  --ink-2: #48514a;
+  --muted: #6f7971;
+  --accent: #2446c6;
+  --accent-ink: #ffffff;
+  --wash: rgba(36, 70, 198, 0.08);
+  --head-sel: #dfe4f5;
+  --err: #b3321e;
+  --live: #1d8a4e;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
+  --s5: #e87ba4; --s6: #008300; --s7: #4a3aa7; --s8: #e34948;
+  --shadow: 0 10px 30px rgba(25, 35, 28, 0.16), 0 1px 3px rgba(25, 35, 28, 0.12);
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --desk: #0f1210; --paper: #171b18; --head: #1d221e; --line: #282e29; --line-2: #384039;
+    --ink: #e2e7e1; --ink-2: #b2bbb3; --muted: #879189; --accent: #8ea5ff; --accent-ink: #0d1433;
+    --wash: rgba(142, 165, 255, 0.12); --head-sel: #252d4d; --err: #ff8c76; --live: #3ccf7f;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
+    --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --desk: #0f1210; --paper: #171b18; --head: #1d221e; --line: #282e29; --line-2: #384039;
+  --ink: #e2e7e1; --ink-2: #b2bbb3; --muted: #879189; --accent: #8ea5ff; --accent-ink: #0d1433;
+  --wash: rgba(142, 165, 255, 0.12); --head-sel: #252d4d; --err: #ff8c76; --live: #3ccf7f;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
+  --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--desk); color: var(--ink); font: 14px/1.4 var(--sans); overflow: hidden; }
+button, select, input, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.app { height: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; padding: 10px 16px 0; }
+
+/* top bar */
+.bar { display: flex; align-items: center; gap: 12px; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; letter-spacing: -0.01em; flex: none; }
+.brand svg { width: 18px; height: 18px; color: var(--ink-2); }
+.tools { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px; flex: 1; min-width: 0; }
+.tb { height: 30px; min-width: 30px; box-sizing: border-box; padding: 0 10px; border: 1px solid transparent; border-radius: 6px; background: none; color: var(--ink-2); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; }
+.tb:hover { background: var(--head); border-color: var(--line); color: var(--ink); }
+.tb[aria-pressed="true"] { background: var(--head-sel); border-color: transparent; color: var(--accent); }
+.tb:disabled { opacity: 0.35; cursor: default; background: none; border-color: transparent; }
+.tb.icon { padding: 0; width: 30px; }
+select.tb { padding: 0 4px; border-color: var(--line); background: var(--paper); }
+.sep { width: 1px; height: 18px; background: var(--line-2); margin: 0 4px; }
+.primary { height: 30px; padding: 0 14px; border: 0; border-radius: 6px; background: var(--accent); color: var(--accent-ink); font-weight: 500; cursor: pointer; white-space: nowrap; }
+.primary:hover { filter: brightness(1.08); }
+.primary:disabled { opacity: 0.5; cursor: default; filter: none; }
+
+.menu { position: relative; }
+.menu > summary { list-style: none; }
+.menu > summary::-webkit-details-marker { display: none; }
+.menu[open] > summary { background: var(--head); border-color: var(--line); color: var(--ink); }
+.menu-list { position: absolute; top: calc(100% + 4px); left: 0; z-index: 20; min-width: 240px; padding: 6px; background: var(--paper); border: 1px solid var(--line-2); border-radius: 8px; box-shadow: var(--shadow); display: grid; gap: 2px; }
+.menu.end .menu-list { left: auto; right: 0; }
+.menu-list button { text-align: left; padding: 7px 10px; border: 0; background: none; border-radius: 5px; cursor: pointer; font-weight: 500; }
+.menu-list button:hover { background: var(--head); }
+.menu-list button.danger { color: var(--err); }
+.menu-list small { display: block; font-weight: 400; font-size: 12.5px; color: var(--muted); }
+.keys { width: min(330px, calc(100vw - 32px)); box-sizing: border-box; padding: 12px 14px; }
+.keys dl { display: grid; grid-template-columns: auto 1fr; gap: 7px 14px; margin: 0; font-size: 13px; }
+.keys dt { font: 12px/1.5 var(--mono); color: var(--ink); white-space: nowrap; }
+.keys dd { margin: 0; color: var(--ink-2); }
+#tabMenu { position: fixed; top: auto; min-width: 170px; z-index: 35; }
+
+/* formula bar */
+.fbar { display: flex; height: 32px; flex: none; background: var(--paper); border: 1px solid var(--line-2); border-radius: 6px; overflow: hidden; }
+.fbar:has(#fx:focus) { border-color: var(--accent); }
+#namebox { width: 92px; flex: none; box-sizing: border-box; border: 0; border-right: 1px solid var(--line); background: var(--head); font: 500 13px var(--mono); text-align: center; padding: 0 6px; }
+#namebox:focus { outline: none; background: var(--paper); box-shadow: inset 0 0 0 2px var(--accent); }
+.fx { flex: none; display: flex; align-items: center; padding: 0 10px; font: italic 500 13px var(--mono); color: var(--muted); border-right: 1px solid var(--line); }
+#fx { flex: 1; min-width: 0; border: 0; background: none; padding: 0 10px; font: 13px var(--mono); outline: none; }
+
+/* sheet */
+.work { flex: 1; min-height: 0; display: flex; gap: 12px; }
+.book { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.sheet { flex: 1; min-height: 0; position: relative; overflow: auto; background: var(--paper); border: 1px solid var(--line-2); border-radius: 6px; isolation: isolate; overscroll-behavior: contain; }
+#grid { border-collapse: separate; border-spacing: 0; table-layout: fixed; font-variant-numeric: tabular-nums; cursor: cell; user-select: none; -webkit-user-select: none; }
+#grid th, #grid td { height: 26px; box-sizing: border-box; padding: 0 6px; border: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#grid thead th { position: sticky; top: 0; z-index: 3; height: 24px; background: var(--head); color: var(--muted); font: 500 11.5px var(--mono); text-align: center; border-bottom-color: var(--line-2); cursor: default; }
+#grid tbody th { position: sticky; left: 0; z-index: 2; background: var(--head); color: var(--muted); font: 11.5px var(--mono); text-align: right; padding-right: 8px; border-right-color: var(--line-2); cursor: default; }
+#grid thead th:first-child { left: 0; z-index: 4; }
+#grid th.hs { background: var(--head-sel); color: var(--accent); }
+#grid td.n { text-align: right; }
+#grid td.b, #grid td.e { text-align: center; }
+#grid td.e { color: var(--err); font: 500 12px var(--mono); }
+#grid td.neg { color: var(--err); }
+#grid td.B { font-weight: 600; }
+#grid td.I { font-style: italic; }
+#grid td.ov { overflow: visible; text-overflow: clip; }
+.rz { position: absolute; top: 0; right: 0; width: 6px; height: 100%; cursor: col-resize; }
+.rz:hover { background: var(--accent); }
+
+.ovl { position: absolute; z-index: 1; box-sizing: border-box; pointer-events: none; }
+#sel { border: 2px solid var(--accent); background: var(--wash); }
+#sel.one { background: none; }
+#fillh { width: 9px; height: 9px; background: var(--accent); border: 2px solid var(--paper); pointer-events: auto; cursor: crosshair; }
+#ants { border: 2px dashed var(--accent); }
+#fillPrev { border: 2px dashed var(--ink-2); }
+.ref { position: absolute; z-index: 1; box-sizing: border-box; pointer-events: none; border: 2px solid var(--rc); background: color-mix(in srgb, var(--rc) 10%, transparent); }
+.peer { position: absolute; z-index: 1; box-sizing: border-box; pointer-events: none; border: 2px solid var(--pc); }
+.peer span { position: absolute; left: -2px; bottom: 100%; padding: 0 6px; border-radius: 4px 4px 4px 0; background: var(--pc); color: #fff; font: 500 11px/17px var(--sans); white-space: nowrap; }
+.peer span.below { bottom: auto; top: 100%; border-radius: 0 4px 4px 4px; }
+#editor { position: absolute; z-index: 2; box-sizing: border-box; margin: 0; border: 2px solid var(--accent); background: var(--paper); color: var(--ink); padding: 0 5px; font: 14px var(--sans); outline: none; box-shadow: var(--shadow); }
+.veil { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: color-mix(in srgb, var(--paper) 70%, transparent); color: var(--ink-2); font-size: 13px; }
+
+/* sheet tabs + status line */
+.tabsbar { display: flex; align-items: flex-start; gap: 8px; min-height: 34px; flex: none; padding-bottom: env(safe-area-inset-bottom, 0px); }
+.tabs { display: flex; gap: 2px; min-width: 0; max-width: 60%; overflow-x: auto; scrollbar-width: none; padding-left: 6px; }
+.tab { position: relative; z-index: 1; flex: none; height: 28px; margin-top: -1px; padding: 0 12px; box-sizing: border-box; border: 1px solid transparent; border-top: 0; border-radius: 0 0 6px 6px; background: none; color: var(--ink-2); cursor: pointer; font-size: 13px; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.tab:hover { color: var(--ink); background: var(--head); }
+.tab[aria-selected="true"] { background: var(--paper); border-color: var(--line-2); color: var(--ink); font-weight: 500; box-shadow: inset 0 -2px 0 var(--accent); }
+.tab i { width: 7px; height: 7px; border-radius: 50%; background: var(--pc); }
+.tab input { width: 110px; border: 0; background: none; padding: 0; font: inherit; outline: none; }
+.addtab { margin-top: 2px; height: 24px; min-width: 24px; width: 24px; font-size: 16px; line-height: 1; }
+#stat { flex: 1; min-width: 0; padding-top: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; color: var(--ink-2); text-align: right; font-variant-numeric: tabular-nums; }
+#stat b { font-weight: 500; color: var(--ink); }
+#stat .code { font: 500 12px var(--mono); color: var(--err); }
+.people { display: flex; align-items: center; gap: 8px; padding-top: 4px; flex: none; }
+.live { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-2); }
+.live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--live); }
+.avatars { display: flex; padding-left: 6px; }
+.avatars > * { width: 22px; height: 22px; box-sizing: border-box; margin-left: -6px; border-radius: 50%; border: 2px solid var(--desk); object-fit: cover; background: var(--pc, var(--line-2)); }
+#saveState { flex: none; padding-top: 6px; font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+
+#pop.passive { pointer-events: none; }
+#pop { position: fixed; z-index: 30; min-width: 250px; max-width: min(430px, calc(100vw - 32px)); padding: 4px; background: var(--paper); border: 1px solid var(--line-2); border-radius: 8px; box-shadow: var(--shadow); font-size: 13px; }
+.ac { display: flex; gap: 8px; align-items: baseline; padding: 5px 8px; border-radius: 5px; cursor: pointer; }
+.ac b { font: 500 12.5px var(--mono); }
+.ac span { font: 12px var(--mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ac.on { background: var(--head-sel); }
+.ac-desc { padding: 4px 8px 5px; color: var(--ink-2); border-top: 1px solid var(--line); margin-top: 3px; }
+.sig { padding: 5px 8px; font: 12.5px var(--mono); }
+.sig em { font-style: normal; font-weight: 600; color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.sig div { font: 12.5px var(--sans); color: var(--ink-2); margin-top: 2px; }
+
+/* side panels */
+.side { width: 340px; flex: none; overflow: auto; display: flex; flex-direction: column; gap: 12px; padding-bottom: 12px; }
+.panel { background: var(--paper); border: 1px solid var(--line-2); border-radius: 8px; padding: 12px 16px 16px; }
+.ph { display: flex; align-items: center; gap: 8px; }
+.ph h2 { margin: 0; flex: 1; min-width: 0; font-size: 14px; font-weight: 600; text-wrap: balance; overflow-wrap: anywhere; }
+.sub { margin: 4px 0 10px; color: var(--muted); font-size: 12.5px; }
+.sub code { font: 12px var(--mono); color: var(--ink-2); }
+.x { flex: none; width: 28px; height: 28px; border: 0; border-radius: 6px; background: none; color: var(--muted); font-size: 18px; line-height: 1; cursor: pointer; }
+.x:hover { background: var(--head); color: var(--ink); }
+.seg { display: inline-flex; flex: none; border: 1px solid var(--line-2); border-radius: 6px; overflow: hidden; }
+.seg button { border: 0; background: none; padding: 3px 10px; font-size: 12.5px; color: var(--ink-2); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--head-sel); color: var(--accent); font-weight: 500; }
+.chart { position: relative; }
+#chartSvg { display: block; width: 100%; height: auto; }
+#chartSvg text { font-size: 11px; fill: var(--muted); }
+#chartSvg .yt { font-family: var(--mono); text-anchor: end; dominant-baseline: middle; }
+#chartSvg .xt { font-family: var(--sans); text-anchor: middle; }
+#chartSvg .gl { stroke: var(--line); }
+#chartSvg .base { stroke: var(--line-2); }
+#chartSvg .mk { pointer-events: none; }
+#chartSvg .hit { fill: transparent; }
+#chartSvg .hit:hover { fill: var(--wash); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 8px; font-size: 12.5px; color: var(--ink-2); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.tip { position: absolute; z-index: 5; pointer-events: none; min-width: 120px; background: var(--paper); border: 1px solid var(--line-2); border-radius: 6px; box-shadow: var(--shadow); padding: 6px 9px; font-size: 12.5px; white-space: nowrap; }
+.tip b { display: block; font-weight: 600; margin-bottom: 2px; }
+.tip div { display: flex; align-items: center; gap: 6px; color: var(--ink-2); }
+.tip i { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+.tip span { margin-left: auto; padding-left: 14px; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+#askText { width: 100%; box-sizing: border-box; min-height: 88px; resize: vertical; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 6px; background: var(--head); line-height: 1.45; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 12px; }
+.chips button { border: 1px solid var(--line-2); border-radius: 999px; background: none; padding: 3px 10px; font-size: 12.5px; color: var(--ink-2); cursor: pointer; }
+.chips button:hover { border-color: var(--accent); color: var(--accent); }
+.row { display: flex; gap: 8px; align-items: center; }
+#askStatus { min-height: 1.4em; margin: 10px 0 0; color: var(--ink-2); font-size: 13px; }
+.fine { margin: 8px 0 0; color: var(--muted); font-size: 12px; }
+
+#toast { position: fixed; left: 50%; bottom: 48px; transform: translateX(-50%); z-index: 40; max-width: calc(100vw - 32px); box-sizing: border-box; padding: 9px 14px; border-radius: 8px; background: var(--ink); color: var(--paper); font-size: 13px; box-shadow: var(--shadow); }
+#kbd { position: fixed; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; resize: none; border: 0; padding: 0; }
+
+@media (max-width: 760px) {
+  .bar { flex-wrap: wrap; }
+  .tools { order: 3; flex-basis: 100%; }
+  .work { flex-direction: column; }
+  .side { width: auto; max-height: 45%; }
+  .tabsbar { flex-wrap: wrap; }
+  .tabs { max-width: calc(100% - 40px); }
+  #stat { order: 5; flex-basis: 100%; text-align: left; padding-top: 0; }
+  #saveState { display: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  #toast { animation: rise 0.18s ease-out; }
+  @keyframes rise { from { opacity: 0; transform: translate(-50%, 6px); } }
+}
+</style>
+
+<div class="app">
+  <header class="bar">
+    <div class="brand">
+      <svg viewBox="0 0 18 18" aria-hidden="true"><rect x="0.75" y="0.75" width="16.5" height="16.5" rx="3" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 1v16M11.5 1v16M1 6.5h16M1 11.5h16" stroke="currentColor"/><rect x="6.5" y="6.5" width="5" height="5" fill="var(--accent)"/></svg>
+      Gridwork
+    </div>
+    <div class="tools" role="toolbar" aria-label="Sheet tools">
+      <button class="tb icon" id="undoBtn" title="Undo (Ctrl+Z)" aria-label="Undo" disabled><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 2.5l-3 3 3 3"/><path d="M2.5 5.5h7a4 4 0 0 1 0 8H7"/></svg></button>
+      <button class="tb icon" id="redoBtn" title="Redo (Ctrl+Y)" aria-label="Redo" disabled><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 2.5l3 3-3 3"/><path d="M13.5 5.5h-7a4 4 0 0 0 0 8H9"/></svg></button>
+      <span class="sep"></span>
+      <button class="tb icon" id="boldBtn" title="Bold (Ctrl+B)" aria-label="Bold" aria-pressed="false"><b>B</b></button>
+      <button class="tb icon" id="italBtn" title="Italic (Ctrl+I)" aria-label="Italic" aria-pressed="false"><i style="font-family: Georgia, serif">I</i></button>
+      <select class="tb" id="fmtSel" title="Number format" aria-label="Number format">
+        <option value="">General</option>
+        <option value="num">1,234.50</option>
+        <option value="int">1,235</option>
+        <option value="cur">Currency</option>
+        <option value="pct">Percent</option>
+        <option value="date">Date</option>
+        <option value="dt">Date &amp; time</option>
+      </select>
+      <span class="sep"></span>
+      <button class="tb" id="chartBtn" title="Chart the selected range, or the table around the selected cell">Chart</button>
+      <button class="tb" id="importBtn" title="Open a CSV, TSV or Gridwork file as new sheets — or drop one on the grid">Import</button>
+      <details class="menu" id="exportMenu">
+        <summary class="tb">Export</summary>
+        <div class="menu-list">
+          <button data-exp="csv">CSV of this sheet<small>Values only · opens in Excel, Sheets, Numbers</small></button>
+          <button data-exp="json">Gridwork file<small>Every sheet, with formulas, formatting and charts</small></button>
+        </div>
+      </details>
+      <details class="menu end">
+        <summary class="tb">Shortcuts</summary>
+        <div class="menu-list keys">
+          <dl>
+            <dt>type · F2</dt><dd>Replace · edit the cell (or double-click)</dd>
+            <dt>Enter · Tab</dt><dd>Save and move down · right</dd>
+            <dt>=SU…</dt><dd>Autocomplete functions, Tab to accept</dd>
+            <dt>click cells</dt><dd>While typing a formula, inserts the reference</dd>
+            <dt>Budget!C12</dt><dd>Refers to a cell on another sheet</dd>
+            <dt>2026-10-01</dt><dd>Typed dates become real dates you can subtract</dd>
+            <dt>$A$1</dt><dd>Keeps a reference fixed when copied</dd>
+            <dt>■ handle</dt><dd>Drag to fill; 1, 2 continues as 3, 4…</dd>
+            <dt>Ctrl D · R</dt><dd>Fill down · right</dd>
+            <dt>Ctrl C X V</dt><dd>Copy, cut, paste (works with Excel too)</dd>
+            <dt>Ctrl Z · Y</dt><dd>Undo · redo</dd>
+            <dt>Ctrl B · I</dt><dd>Bold · italic</dd>
+            <dt>Ctrl ←↑→↓</dt><dd>Jump to the edge of the data</dd>
+            <dt>Ctrl PgUp · PgDn</dt><dd>Previous · next sheet</dd>
+            <dt>double-click tab</dt><dd>Rename a sheet (right-click for more)</dd>
+          </dl>
+        </div>
+      </details>
+    </div>
+    <button class="primary" id="askBtn" hidden>Build with Claude</button>
+  </header>
+
+  <div class="fbar">
+    <input id="namebox" spellcheck="false" autocomplete="off" aria-label="Selected cell. Type a cell or range and press Enter to go there." title="Type a cell like C12 or a range like A1:D9, then Enter">
+    <label class="fx" for="fx">fx</label>
+    <input id="fx" spellcheck="false" autocomplete="off" aria-label="Contents of the selected cell">
+  </div>
+
+  <div class="work">
+    <div class="book">
+      <div class="sheet" id="wrap">
+        <table id="grid" aria-label="Spreadsheet"></table>
+        <div class="ovl" id="ants" hidden></div>
+        <div class="ovl" id="fillPrev" hidden></div>
+        <div id="peers"></div>
+        <div id="hl"></div>
+        <div class="ovl" id="sel"></div>
+        <div class="ovl" id="fillh" title="Drag to fill"></div>
+        <input id="editor" hidden spellcheck="false" autocomplete="off" aria-label="Cell contents">
+        <div class="veil" id="veil" hidden>Opening the shared workbook…</div>
+      </div>
+      <div class="tabsbar">
+        <div class="tabs" id="tabs" role="tablist" aria-label="Sheets"></div>
+        <button class="tb addtab" id="addSheet" title="Add a sheet" aria-label="Add a sheet">+</button>
+        <span id="stat" aria-live="polite"></span>
+        <div class="people" id="people" hidden></div>
+        <span id="saveState"></span>
+      </div>
+    </div>
+
+    <aside class="side" id="side" hidden>
+      <section class="panel" id="chartPanel" hidden>
+        <div class="ph">
+          <h2 id="chartTitle">Chart</h2>
+          <div class="seg" role="group" aria-label="Chart type">
+            <button data-type="bar" aria-pressed="true">Bar</button>
+            <button data-type="line" aria-pressed="false">Line</button>
+          </div>
+          <button class="x" data-close="chartPanel" aria-label="Close chart">×</button>
+        </div>
+        <p class="sub">From <code id="chartRange"></code> · redraws as you edit</p>
+        <div class="chart" id="chartBox">
+          <svg id="chartSvg" role="img" aria-labelledby="chartTitle"></svg>
+          <div class="tip" id="tip" hidden></div>
+        </div>
+        <div class="legend" id="legend"></div>
+      </section>
+
+      <section class="panel" id="askPanel" hidden>
+        <div class="ph">
+          <h2>Build with Claude</h2>
+          <button class="x" data-close="askPanel" aria-label="Close">×</button>
+        </div>
+        <p class="sub">Describe a sheet. Claude writes it as a new tab with live formulas, and can reference the sheets you already have.</p>
+        <textarea id="askText" placeholder="e.g. Home loan of 250,000 at 7.5% over 20 years, one row per year with interest, principal and balance"></textarea>
+        <div class="chips" id="chips">
+          <button>Monthly summary of my Budget sheet</button>
+          <button>Loan repayment schedule</button>
+          <button>Grade book with letter grades</button>
+          <button>Split trip costs between 4 friends</button>
+          <button>Project timeline with due dates</button>
+        </div>
+        <div class="row">
+          <button class="primary" id="askGo">Build sheet</button>
+          <button class="tb" id="askStop" hidden>Stop</button>
+        </div>
+        <p id="askStatus" aria-live="polite"></p>
+        <p class="fine">Adds a new sheet · nothing you have is overwritten · uses your Claude usage</p>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<textarea id="kbd" inputmode="none" autocomplete="off" spellcheck="false" aria-label="Spreadsheet. Arrow keys move, typing edits the selected cell."></textarea>
+<div id="pop" hidden></div>
+<div class="menu-list" id="tabMenu" role="menu" hidden>
+  <button data-act="rename" role="menuitem">Rename</button>
+  <button data-act="dup" role="menuitem">Duplicate</button>
+  <button data-act="del" role="menuitem" class="danger">Delete</button>
+</div>
+<div id="toast" role="status" hidden></div>
+<input type="file" id="fileIn" accept=".csv,.tsv,.txt,.json" hidden>
+
+<script src="engine.js"></script>
+<script src="sample.js"></script>
+<script>
+(() => {
+'use strict';
+const E = window.Engine;
+const $ = s => document.querySelector(s);
+const MAXR = 1000, MAXC = 52, DEFW = 96, RHW = 46, STORE = 'gridwork:v1';
+const wrap = $('#wrap'), grid = $('#grid'), kbd = $('#kbd'), fx = $('#fx'), nb = $('#namebox'), editor = $('#editor');
+const selEl = $('#sel'), fillH = $('#fillh'), ants = $('#ants'), fillPrev = $('#fillPrev'), hl = $('#hl'), pop = $('#pop');
+
+// Day-first locales (en-IN, en-GB, most of Europe) read 3/4/2026 as 3 April.
+try {
+  const parts = new Intl.DateTimeFormat().formatToParts(new Date(2026, 2, 4)).map(p => p.type);
+  E.config.dateOrder = parts.indexOf('day') < parts.indexOf('month') ? 'dmy' : 'mdy';
+} catch { /* keep month-first */ }
+
+const book = new E.Workbook();
+const tabs = new Map();          // sheet id → view state: { styles, widths, chart, order, anchor, focus, scroll }
+let cur = null, T = null;        // the visible sheet and its view state
+let ROWS = 100, COLS = 26, tds = [], colHeads = [], rowHeads = [];
+let anchor = { r: 0, c: 0 }, focus = { r: 0, c: 0 };
+let past = [], future = [];
+let edit = null, point = null, ac = null, clip = null, drag = null;
+let sample = null, downloads = null;
+let mode = 'local';              // 'local': this browser · 'connecting' · 'live': the artifact's shared database
+let readOnly = '';               // why editing is off, when it is
+const newTab = order => ({ styles: new Map(), widths: {}, chart: null, order: order ?? Date.now(), anchor: { r: 0, c: 0 }, focus: { r: 0, c: 0 }, scroll: [0, 0] });
+
+// ---------- display ----------
+function localCurrency() {
+  try {
+    const region = new Intl.Locale(navigator.language).maximize().region || '';
+    const map = { IN: 'INR', US: 'USD', GB: 'GBP', JP: 'JPY', CN: 'CNY', CA: 'CAD', AU: 'AUD', NZ: 'NZD', SG: 'SGD', AE: 'AED', CH: 'CHF', SE: 'SEK', NO: 'NOK', DK: 'DKK', BR: 'BRL', MX: 'MXN', KR: 'KRW', ZA: 'ZAR', PL: 'PLN' };
+    return map[region] || (/^(AT|BE|CY|DE|EE|ES|FI|FR|GR|HR|IE|IT|LT|LU|LV|MT|NL|PT|SI|SK)$/.test(region) ? 'EUR' : 'USD');
+  } catch { return 'USD'; }
+}
+const FMT = {
+  num: new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+  int: new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }),
+  cur: new Intl.NumberFormat(undefined, { style: 'currency', currency: localCurrency() }),
+  pct: new Intl.NumberFormat(undefined, { style: 'percent', maximumFractionDigits: 1 }),
+  date: new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeZone: 'UTC' }),
+  dt: new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }),
+};
+const isDate = f => f === 'date' || f === 'dt';
+const DAY0 = Date.UTC(1899, 11, 30);
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]);
+const plain = v => v == null ? '' : v instanceof E.Err ? v.code : typeof v === 'number' ? E.fmtGeneral(v) : typeof v === 'boolean' ? (v ? 'TRUE' : 'FALSE') : String(v);
+function show(v, f) {
+  if (typeof v !== 'number' || !FMT[f]) return plain(v);
+  if (!isDate(f)) return FMT[f].format(v);
+  return v >= 1 && v < 2958466 ? FMT[f].format(new Date(DAY0 + Math.round(v * 864e5))) : plain(v);
+}
+const clean = st => { if (!st) return null; const o = {}; for (const [k, v] of Object.entries(st)) if (v) o[k] = v; return Object.keys(o).length ? o : null; };
+const cleanStyle = v => v && typeof v === 'object' ? clean({ b: v.b ? 1 : 0, i: v.i ? 1 : 0, f: FMT[v.f] ? v.f : '' }) : null;
+const widthOf = c => T.widths[E.colName(c)] || DEFW;
+
+// ---------- grid ----------
+function build() {
+  let h = `<colgroup><col style="width:${RHW}px">`;
+  for (let c = 0; c < COLS; c++) h += `<col style="width:${widthOf(c)}px">`;
+  h += '</colgroup><thead><tr><th aria-label="Select all"></th>';
+  for (let c = 0; c < COLS; c++) h += `<th scope="col">${E.colName(c)}<span class="rz" aria-hidden="true"></span></th>`;
+  h += '</tr></thead><tbody>';
+  const cells = '<td></td>'.repeat(COLS);
+  for (let r = 0; r < ROWS; r++) h += `<tr><th scope="row">${r + 1}</th>${cells}</tr>`;
+  grid.innerHTML = h + '</tbody>';
+  tds = [...grid.tBodies[0].rows].map(tr => [...tr.cells].slice(1));
+  colHeads = [...grid.tHead.rows[0].cells].slice(1);
+  rowHeads = [...grid.tBodies[0].rows].map(tr => tr.cells[0]);
+  sizeTable();
+}
+function sizeTable() {
+  let w = RHW;
+  for (let c = 0; c < COLS; c++) w += widthOf(c);
+  grid.style.width = w + 'px';
+}
+function paint(r, c) {
+  const k = E.key(r, c), v = cur.value(k), st = T.styles.get(k), td = tds[r][c];
+  let cls = '', spill = 0;
+  if (typeof v === 'number') cls = v < 0 && st?.f && !isDate(st.f) ? 'n neg' : 'n';
+  else if (v instanceof E.Err) cls = 'e';
+  else if (typeof v === 'boolean') cls = 'b';
+  else if (v) {
+    // Text runs on over empty neighbours, like every spreadsheet since VisiCalc.
+    for (let j = c + 1; j < COLS && j < c + 12 && !cur.cells.has(E.key(r, j)); j++) spill += widthOf(j);
+    if (spill) cls = 'ov';
+  }
+  if (st?.b) cls += ' B';
+  if (st?.i) cls += ' I';
+  const text = show(v, st?.f), tip = v instanceof E.Err ? v.msg : '';
+  if (td._t !== text) td.textContent = td._t = text;
+  if (td._c !== cls) td.className = td._c = cls;
+  if (td._s !== spill) { td._s = spill; td.style.clipPath = spill ? `inset(0 -${spill}px 0 0)` : ''; }
+  if (td._tip !== tip) td.title = td._tip = tip;
+}
+function render() { for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) paint(r, c); }
+function grow(keys) {
+  let R = ROWS, C = COLS;
+  for (const k of keys) {
+    const p = E.parseKey(k);
+    if (!p) continue;
+    if (p.r >= R) R = p.r + 21;
+    if (p.c >= C) C = p.c + 1;
+  }
+  R = Math.min(MAXR, R); C = Math.min(MAXC, C);
+  if (R === ROWS && C === COLS) return false;
+  ROWS = R; COLS = C;
+  build();
+  return true;
+}
+
+// ---------- sheets ----------
+function activate(id) {
+  if (edit) commitEdit();
+  if (T) { T.anchor = anchor; T.focus = focus; T.scroll = [wrap.scrollLeft, wrap.scrollTop]; }
+  cur = book.get(id) || book.sheets[0];
+  T = tabs.get(cur.id);
+  anchor = T.anchor; focus = T.focus;
+  let R = 0, C = 0;
+  for (const k of [...cur.cells.keys(), ...T.styles.keys()]) { const p = E.parseKey(k); R = Math.max(R, p.r); C = Math.max(C, p.c); }
+  ROWS = Math.min(MAXR, Math.max(100, R + 21, focus.r + 1, anchor.r + 1));
+  COLS = Math.min(MAXC, Math.max(26, C + 1));
+  build();
+  render();
+  wrap.scrollLeft = T.scroll[0];
+  wrap.scrollTop = T.scroll[1];
+  ants.hidden = !(clip && clip.sid === cur.id);
+  selChanged();
+  renderTabs();
+  showPanel('chartPanel', !!T.chart);
+  drawPeers();
+}
+const BAD_NAME = /[\\/?*[\]:]/g;
+function nameProblem(name, except) {
+  if (!name) return 'A sheet needs a name.';
+  if (name.length > 31) return 'Keep sheet names to 31 characters.';
+  if (/[\\/?*[\]:]/.test(name)) return 'Sheet names can’t contain \\ / ? * [ ] or :';
+  const other = book.byName(name);
+  return other && other.id !== except ? `There’s already a sheet called “${name}”.` : '';
+}
+function uniqueName(base) {
+  base = String(base || '').replace(BAD_NAME, ' ').replace(/\s+/g, ' ').trim().slice(0, 27) || 'Sheet';
+  let name = base;
+  for (let i = 2; book.byName(name); i++) name = `${base} ${i}`;
+  return name;
+}
+function sheetMeta(s) { const t = tabs.get(s.id); return { name: s.name, order: t.order, widths: t.widths, chart: t.chart }; }
+// data: { cells, styles, widths, chart } as read by readWorkbook()
+function addSheet(name, data, id) {
+  if (readOnly) { toast(readOnly); return null; }
+  const sh = book.add(uniqueName(name), id && !book.get(id) ? id : undefined), tab = newTab();
+  tabs.set(sh.id, tab);
+  const entry = [];
+  if (data) {
+    tab.widths = { ...data.widths };
+    tab.chart = data.chart || null;
+    for (const [k, raw] of Object.entries(data.cells)) { sh.set(k, raw); entry.push({ sid: sh.id, k, after: { raw, st: data.styles[k] || null } }); }
+    for (const [k, st] of Object.entries(data.styles)) { tab.styles.set(k, st); if (!data.cells[k]) entry.push({ sid: sh.id, k, after: { raw: '', st } }); }
+  }
+  pushMeta({ sheets: { [sh.id]: sheetMeta(sh) } });
+  pushCells(entry);
+  book.recalc();
+  renderTabs();
+  persistLocal();
+  return sh;
+}
+function renameSheet(id, name) {
+  if (readOnly) { toast(readOnly); return false; }
+  const sh = book.get(id);
+  name = String(name).trim();
+  if (!sh || name === sh.name) return true;
+  const problem = nameProblem(name, id);
+  if (problem) { toast(problem); return false; }
+  const old = sh.name, changes = [];
+  sh.name = name;
+  // Formulas everywhere follow the rename, as in Excel.
+  for (const s of book.sheets) for (const [k, c] of s.cells) {
+    if (c.raw[0] !== '=') continue;
+    const raw = E.renameRefs(c.raw, old, name);
+    if (raw !== c.raw) changes.push({ sid: s.id, k, raw });
+  }
+  commit(changes, { history: false });
+  pushMeta({ sheets: { [id]: { name } } });
+  refresh();
+  renderTabs();
+  return true;
+}
+function deleteSheet(id, quiet) {
+  if (readOnly) { toast(readOnly); return; }
+  if (book.sheets.length < 2) { toast('A workbook needs at least one sheet.'); return; }
+  const sh = book.get(id), at = book.sheets.indexOf(sh);
+  if (!sh) return;
+  book.remove(id);
+  tabs.delete(id);
+  const keep = e => e.filter(x => x.sid !== id);
+  past = past.map(keep).filter(e => e.length);
+  future = future.map(keep).filter(e => e.length);
+  if (clip?.sid === id) clip = null;
+  dropRows(id);
+  pushMeta({ sheets: { [id]: null } });
+  if (cur === sh) { T = null; activate(book.sheets[Math.max(0, at - 1)].id); } else renderTabs();
+  refresh();
+  if (!quiet) toast(`Deleted “${sh.name}”.`);
+}
+function duplicateSheet(id) {
+  const sh = book.get(id), t = tabs.get(id);
+  const copy = addSheet(`${sh.name} copy`, {
+    cells: Object.fromEntries([...sh.cells].map(([k, c]) => [k, c.raw])),
+    styles: Object.fromEntries(t.styles), widths: t.widths, chart: t.chart,
+  });
+  if (copy) activate(copy.id);
+}
+function renderTabs() {
+  const el = $('#tabs'), onSheet = {};
+  for (const p of peers) if (!p.sameTab && p.presence?.sheet) (onSheet[p.presence.sheet] ||= []).push(peerInfo(p).color);
+  // Update buttons in place when the sheet list is unchanged, so a double-click lands on the same element.
+  const same = el.children.length === book.sheets.length && book.sheets.every((s, i) => el.children[i].dataset.id === s.id);
+  if (!same) el.replaceChildren(...book.sheets.map(s => Object.assign(document.createElement('button'), { className: 'tab' })));
+  book.sheets.forEach((s, i) => {
+    const b = el.children[i];
+    if (b.querySelector('input')) return; // mid-rename
+    b.setAttribute('role', 'tab');
+    b.setAttribute('aria-selected', s === cur);
+    b.dataset.id = s.id;
+    b.replaceChildren(s.name, ...(onSheet[s.id] || []).slice(0, 3).map(color => { const d = document.createElement('i'); d.style.setProperty('--pc', color); return d; }));
+  });
+  el.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+}
+function startRename(id) {
+  if (readOnly) { toast(readOnly); return; }
+  const btn = $(`#tabs [data-id="${id}"]`);
+  if (!btn) return;
+  const input = document.createElement('input');
+  input.value = book.get(id).name;
+  input.setAttribute('aria-label', 'Sheet name');
+  btn.replaceChildren(input);
+  input.focus();
+  input.select();
+  let done = false;
+  const finish = ok => {
+    if (done) return;
+    done = true;
+    if (ok && !renameSheet(id, input.value)) { done = false; input.focus(); return; }
+    input.remove();
+    renderTabs();
+    focusGrid();
+  };
+  input.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') finish(true); if (e.key === 'Escape') finish(false); });
+  input.addEventListener('blur', () => finish(true));
+  input.addEventListener('mousedown', e => e.stopPropagation());
+}
+let menuFor = null, delArmed = false;
+function openTabMenu(id, x, y) {
+  const m = $('#tabMenu');
+  menuFor = id;
+  delArmed = false;
+  m.querySelector('[data-act="del"]').textContent = 'Delete';
+  m.hidden = false;
+  m.style.left = Math.min(x, innerWidth - m.offsetWidth - 8) + 'px';
+  m.style.top = Math.max(8, y - m.offsetHeight - 6) + 'px';
+}
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('.tab'); if (b && !b.querySelector('input') && b.dataset.id !== cur.id) activate(b.dataset.id); });
+$('#tabs').addEventListener('dblclick', e => { const b = e.target.closest('.tab'); if (b) startRename(b.dataset.id); });
+$('#tabs').addEventListener('contextmenu', e => { const b = e.target.closest('.tab'); if (!b) return; e.preventDefault(); activate(b.dataset.id); openTabMenu(b.dataset.id, e.clientX, e.clientY); });
+$('#tabMenu').addEventListener('mousedown', e => e.preventDefault());
+$('#tabMenu').addEventListener('click', e => {
+  const act = e.target.closest('button')?.dataset.act, m = $('#tabMenu');
+  if (act === 'del' && !delArmed) { delArmed = true; e.target.textContent = `Delete “${book.get(menuFor)?.name}”? Click again`; return; }
+  m.hidden = true;
+  if (act === 'rename') startRename(menuFor);
+  if (act === 'dup') duplicateSheet(menuFor);
+  if (act === 'del') deleteSheet(menuFor);
+});
+$('#addSheet').onclick = () => { const sh = addSheet(`Sheet${book.sheets.length + 1}`); if (sh) activate(sh.id); };
+
+// ---------- selection ----------
+const rect = () => ({ r0: Math.min(anchor.r, focus.r), c0: Math.min(anchor.c, focus.c), r1: Math.max(anchor.r, focus.r), c1: Math.max(anchor.c, focus.c) });
+const rangeName = g => E.key(g.r0, g.c0) + (g.r0 === g.r1 && g.c0 === g.c1 ? '' : ':' + E.key(g.r1, g.c1));
+const activeKey = () => E.key(anchor.r, anchor.c);
+function parseRange(s) {
+  const [a, b = a] = String(s).replace(/\$/g, '').split(':').map(x => E.parseKey(x));
+  return a && b ? { r0: Math.min(a.r, b.r), c0: Math.min(a.c, b.c), r1: Math.max(a.r, b.r), c1: Math.max(a.c, b.c) } : null;
+}
+function cellsIn(g) {
+  const out = [];
+  for (let r = g.r0; r <= g.r1; r++) for (let c = g.c0; c <= g.c1; c++) out.push(E.key(r, c));
+  return out;
+}
+function place(el, g) {
+  const a = tds[Math.min(g.r0, ROWS - 1)][Math.min(g.c0, COLS - 1)], b = tds[Math.min(g.r1, ROWS - 1)][Math.min(g.c1, COLS - 1)];
+  const x = a.offsetLeft - 1, y = a.offsetTop - 1;
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  el.style.width = b.offsetLeft + b.offsetWidth - x + 'px';
+  el.style.height = b.offsetTop + b.offsetHeight - y + 'px';
+}
+function drawSel() {
+  const g = rect(), b = tds[g.r1][g.c1];
+  place(selEl, g);
+  selEl.classList.toggle('one', g.r0 === g.r1 && g.c0 === g.c1);
+  fillH.style.left = b.offsetLeft + b.offsetWidth - 5 + 'px';
+  fillH.style.top = b.offsetTop + b.offsetHeight - 5 + 'px';
+  colHeads.forEach((th, c) => th.classList.toggle('hs', c >= g.c0 && c <= g.c1));
+  rowHeads.forEach((th, r) => th.classList.toggle('hs', r >= g.r0 && r <= g.r1));
+  if (clip && clip.sid === cur.id && !ants.hidden) place(ants, clip.g);
+}
+function selChanged() {
+  drawSel();
+  const k = activeKey(), st = T.styles.get(k) || {};
+  nb.value = rangeName(rect());
+  if (!edit) fx.value = cur.raw(k);
+  $('#boldBtn').setAttribute('aria-pressed', !!st.b);
+  $('#italBtn').setAttribute('aria-pressed', !!st.i);
+  $('#fmtSel').value = st.f || '';
+  status();
+  sendPresence();
+}
+function status() {
+  const g = rect(), el = $('#stat');
+  if (g.r0 !== g.r1 || g.c0 !== g.c1) {
+    let n = 0, sum = 0, count = 0, f;
+    for (const k of cellsIn(g)) {
+      const v = cur.value(k);
+      if (v != null && v !== '') count++;
+      if (typeof v === 'number') { n++; sum += v; f ??= T.styles.get(k)?.f; }
+    }
+    if (isDate(f)) f = '';
+    el.innerHTML = n ? `Sum <b>${esc(show(sum, f))}</b> · Average <b>${esc(show(sum / n, f))}</b> · Count <b>${count}</b>` : `Count <b>${count}</b>`;
+    return;
+  }
+  const v = cur.value(activeKey());
+  el.innerHTML = v instanceof E.Err ? `<span class="code">${esc(v.code)}</span> ${esc(v.msg)}` : '';
+}
+function ensureRow(r) {
+  if (r < ROWS || ROWS >= MAXR) return;
+  ROWS = Math.min(MAXR, r + 50);
+  build();
+  render();
+  drawPeers();
+}
+function go(r, c, extend) {
+  ensureRow(r);
+  r = Math.max(0, Math.min(ROWS - 1, r));
+  c = Math.max(0, Math.min(COLS - 1, c));
+  if (extend) focus = { r, c };
+  else { anchor = { r, c }; focus = { r, c }; }
+  selChanged();
+  reveal(r, c);
+}
+function reveal(r, c) {
+  const td = tds[r][c], head = grid.tHead.offsetHeight;
+  const x = td.offsetLeft, y = td.offsetTop, w = td.offsetWidth, h = td.offsetHeight;
+  if (x - RHW < wrap.scrollLeft) wrap.scrollLeft = x - RHW;
+  else if (x + w > wrap.scrollLeft + wrap.clientWidth) wrap.scrollLeft = x + w - wrap.clientWidth;
+  if (y - head < wrap.scrollTop) wrap.scrollTop = y - head;
+  else if (y + h > wrap.scrollTop + wrap.clientHeight) wrap.scrollTop = y + h - wrap.clientHeight;
+}
+// Ctrl+Arrow: run to the last filled cell, or on to the next filled one.
+function jump(dr, dc, extend) {
+  const from = extend ? focus : anchor;
+  const inside = (r, c) => r >= 0 && c >= 0 && r < ROWS && c < COLS;
+  const filled = (r, c) => inside(r, c) && cur.cells.has(E.key(r, c));
+  let { r, c } = from;
+  if (filled(r, c) && filled(r + dr, c + dc)) while (filled(r + dr, c + dc)) { r += dr; c += dc; }
+  else {
+    do { r += dr; c += dc; } while (inside(r, c) && !filled(r, c));
+    if (!inside(r, c)) { r -= dr; c -= dc; }
+  }
+  go(r, c, extend);
+}
+const focusGrid = () => kbd.focus({ preventScroll: true });
+
+// ---------- changes & history ----------
+function put(sid, k, { raw, st }) {
+  const sh = book.get(sid), t = tabs.get(sid);
+  if (!sh) return;
+  sh.set(k, raw);
+  if (st) t.styles.set(k, st); else t.styles.delete(k);
+}
+// changes: [{k, raw?, st?, sid?}] — raw/st left undefined are kept, st null clears, sid defaults to this sheet.
+function commit(changes, { history = true } = {}) {
+  if (readOnly) { toast(readOnly); return false; }
+  const entry = [];
+  for (const ch of changes) {
+    const p = E.parseKey(ch.k), sid = ch.sid || cur.id, sh = book.get(sid);
+    if (!p || p.r >= MAXR || p.c >= MAXC || !sh) continue;
+    const k = E.key(p.r, p.c), t = tabs.get(sid);
+    const before = { raw: sh.raw(k), st: t.styles.get(k) || null };
+    const raw = ch.raw === undefined ? before.raw : ch.raw;
+    let st = ch.st === undefined ? before.st : clean(ch.st);
+    // Typing a date gives the cell a date format, like Excel.
+    if (ch.raw && !st?.f && E.parseDate(ch.raw) != null) st = { ...st, f: /\d:\d\d/.test(ch.raw) ? 'dt' : 'date' };
+    const after = { raw, st };
+    if (before.raw === after.raw && JSON.stringify(before.st) === JSON.stringify(after.st)) continue;
+    put(sid, k, after);
+    entry.push({ sid, k, before, after });
+  }
+  if (!entry.length) return false;
+  if (history) {
+    past.push(entry);
+    if (past.length > 300) past.shift();
+    future = [];
+  }
+  grow(entry.filter(x => x.sid === cur.id && (x.after.raw || x.after.st)).map(x => x.k));
+  pushCells(entry);
+  refresh();
+  return true;
+}
+function replay(e, dir) {
+  if (readOnly) { toast(readOnly); return false; }
+  const sid = e[0].sid;
+  if (sid !== cur.id && book.get(sid)) activate(sid);
+  const list = dir === 'undo' ? [...e].reverse().map(x => ({ sid: x.sid, k: x.k, after: x.before })) : e;
+  for (const x of list) put(x.sid, x.k, x.after);
+  pushCells(list);
+  refresh();
+  return true;
+}
+function undo() { const e = past.pop(); if (e && replay(e, 'undo')) future.push(e); else if (e) past.push(e); }
+function redo() { const e = future.pop(); if (e && replay(e, 'redo')) past.push(e); else if (e) future.push(e); }
+function refresh() {
+  book.recalc();
+  render();
+  selChanged();
+  drawChart();
+  drawPeers();
+  persistLocal();
+  $('#undoBtn').disabled = !past.length;
+  $('#redoBtn').disabled = !future.length;
+}
+
+// ---------- saving: this browser ----------
+function workbookJSON() {
+  return {
+    app: 'gridwork', v: 2, active: cur?.id,
+    sheets: book.sheets.map(s => {
+      const t = tabs.get(s.id);
+      return { id: s.id, name: s.name, cells: Object.fromEntries([...s.cells].map(([k, c]) => [k, c.raw])), styles: Object.fromEntries(t.styles), widths: t.widths, chart: t.chart };
+    }),
+  };
+}
+const cleanWidths = w => {
+  const out = {};
+  for (const [k, px] of Object.entries(w && typeof w === 'object' ? w : {})) {
+    const L = /^\d+$/.test(k) ? E.colName(+k) : k.toUpperCase(); // version 1 files keyed widths by column number
+    if (/^[A-Z]{1,2}$/.test(L) && +px >= 30 && +px <= 800) out[L] = +px;
+  }
+  return out;
+};
+const cleanChart = c => c && typeof c === 'object' && parseRange(String(c.range || '').toUpperCase()) ? { range: String(c.range).toUpperCase(), type: c.type === 'line' ? 'line' : 'bar' } : null;
+// Accepts version 1 (one sheet), version 2 (a workbook) and the sample's { formats: [[range, style]] } shorthand.
+function readWorkbook(s) {
+  const list = Array.isArray(s?.sheets) ? s.sheets : s?.cells ? [{ name: 'Sheet1', ...s }] : [];
+  return list.slice(0, 50).map((x, i) => {
+    const cells = {}, styles = {};
+    for (const [k, raw] of Object.entries(x.cells || {})) {
+      const p = E.parseKey(k);
+      if (p && p.r < MAXR && p.c < MAXC && raw != null && raw !== '') cells[E.key(p.r, p.c)] = String(raw);
+    }
+    for (const [k, v] of Object.entries(x.styles || {})) { const p = E.parseKey(k), st = cleanStyle(v); if (p && st) styles[E.key(p.r, p.c)] = st; }
+    for (const [rg, v] of Array.isArray(x.formats) ? x.formats : []) {
+      const g = parseRange(String(rg).toUpperCase());
+      if (g) for (const k of cellsIn(g)) styles[k] = cleanStyle({ ...styles[k], ...v });
+    }
+    return { id: /^[\w-]{1,40}$/.test(x.id) ? x.id : undefined, name: String(x.name || `Sheet${i + 1}`), cells, styles, widths: cleanWidths(x.widths), chart: cleanChart(x.chart) };
+  });
+}
+let saveT;
+function persistLocal() {
+  if (mode !== 'local') return;
+  clearTimeout(saveT);
+  saveT = setTimeout(() => {
+    try { localStorage.setItem(STORE, JSON.stringify(workbookJSON())); setSaveState('Saved in this browser'); }
+    catch { setSaveState('Not saved: browser storage is off. Use Export.'); }
+  }, 400);
+}
+const setSaveState = text => { $('#saveState').textContent = text; };
+
+// ---------- saving: the shared workbook (inside Claude) ----------
+// One document per sheet row (rows/<sheet>.<row>) keeps concurrent edits apart and stays far under the 5,000-document cap;
+// per-cell fields merge with update(), so two people typing in one row don't overwrite each other.
+let db = null, room = null, user = null, me = null;
+const known = new Set(), mirror = new Map(), outbox = new Map(), waiting = new Set();
+let inflight = 0, metaExists = false, metaPatch = null, metaBusy = false;
+function merge(a, b) {
+  if (!b || typeof b !== 'object' || Array.isArray(b)) return b;
+  const o = { ...(a && typeof a === 'object' && !Array.isArray(a) ? a : {}) };
+  for (const [k, v] of Object.entries(b)) o[k] = v && typeof v === 'object' && !Array.isArray(v) ? merge(o[k], v) : v;
+  return o;
+}
+function pushCells(entry) {
+  if (mode !== 'live' || !entry.length) return;
+  if (!metaExists && !metaBusy) pushMeta({});
+  for (const { sid, k, after } of entry) {
+    const p = E.parseKey(k), L = E.colName(p.c), id = `${sid}.${p.r}`;
+    let o = outbox.get(id);
+    if (!o) outbox.set(id, o = { sid, r: p.r, c: {}, st: {}, sent: new Set(), busy: false });
+    o.c[L] = after.raw;
+    o.st[L] = after.st || null;
+    flushRow(id);
+  }
+  updateSaveState();
+}
+function rowData(sid, r) {
+  const sh = book.get(sid), t = tabs.get(sid);
+  if (!sh) return null;
+  const c = {}, st = {};
+  let any = false;
+  for (let ci = 0; ci < MAXC; ci++) {
+    const k = E.key(r, ci), L = E.colName(ci), raw = sh.raw(k), s = t.styles.get(k);
+    if (raw) { c[L] = raw; any = true; }
+    if (s) { st[L] = s; any = true; }
+  }
+  return any ? { c, st } : null;
+}
+async function flushRow(id) {
+  const o = outbox.get(id);
+  if (!o || o.busy) return;
+  const cols = Object.keys(o.c);
+  if (!cols.length) { outbox.delete(id); updateSaveState(); return; }
+  if (inflight >= 6) { waiting.add(id); return; } // a paste of 500 rows goes out six at a time
+  const c = o.c, st = o.st;
+  o.c = {}; o.st = {}; o.sent = new Set(cols); o.busy = true; inflight++;
+  const ref = db.collection('rows').doc(id);
+  try {
+    const row = rowData(o.sid, o.r);
+    if (!row) { if (known.has(id)) await ref.delete(); known.delete(id); }
+    else if (known.has(id)) await ref.update({ c, st });
+    else { await ref.set({ s: o.sid, r: o.r, ...row }); known.add(id); }
+  } catch (e) {
+    const requeue = () => { for (const L of cols) if (!(L in o.c)) { o.c[L] = c[L]; o.st[L] = st[L]; } };
+    // update() needs the row to exist; if someone else just cleared it, write the whole row instead.
+    if (e?.code === 'invalid_argument' && known.has(id)) { known.delete(id); requeue(); }
+    else writeFailed(e, requeue);
+  }
+  inflight--;
+  o.busy = false;
+  o.sent = new Set();
+  flushRow(id);
+  const next = waiting.values().next().value;
+  if (next) { waiting.delete(next); flushRow(next); }
+  updateSaveState();
+}
+function dropRows(sid) {
+  if (mode !== 'live') return;
+  for (const id of [...outbox.keys()]) if (id.startsWith(sid + '.')) outbox.delete(id);
+  for (const id of [...known]) if (id.startsWith(sid + '.')) { known.delete(id); db.collection('rows').doc(id).delete().catch(() => {}); }
+}
+function fullMeta() { return { sheets: Object.fromEntries(book.sheets.map(s => [s.id, sheetMeta(s)])) }; }
+function pushMeta(patch) {
+  if (mode !== 'live') return;
+  metaPatch = merge(metaPatch || {}, patch);
+  flushMeta();
+}
+async function flushMeta() {
+  if (metaBusy || !metaPatch) return;
+  const p = metaExists ? metaPatch : fullMeta();
+  metaPatch = null;
+  metaBusy = true;
+  const ref = db.doc('wb/meta');
+  try {
+    if (metaExists) await ref.update(p);
+    else { await ref.set(p); metaExists = true; }
+  } catch (e) {
+    writeFailed(e, () => { metaPatch = merge(p, metaPatch || {}); });
+  }
+  metaBusy = false;
+  if (metaPatch) flushMeta();
+  updateSaveState();
+}
+function writeFailed(e, retry) {
+  const code = e?.code;
+  if (code === 'unavailable' || code === 'resource_exhausted') {
+    retry();
+    setTimeout(() => { for (const id of outbox.keys()) flushRow(id); flushMeta(); }, 1500 + Math.random() * 1500);
+    return;
+  }
+  if (code === 'quota_exceeded') { toast('The shared workbook is full (5,000 rows across all sheets). Delete rows or sheets to add more.'); return; }
+  readOnly = code === 'invalid_argument' ? 'You can view this workbook but not edit it.' : 'Lost the connection to the shared workbook. Reload the page to keep editing.';
+  toast(readOnly);
+  updateSaveState();
+}
+function updateSaveState() {
+  if (mode !== 'live') return;
+  const pending = outbox.size || metaBusy || metaPatch;
+  setSaveState(readOnly ? (readOnly.startsWith('You can view') ? 'View only' : 'Offline') : pending ? 'Saving…' : 'All changes saved');
+}
+function applyMeta(data) {
+  const entries = Object.entries(data?.sheets && typeof data.sheets === 'object' ? data.sheets : {})
+    .filter(([id, s]) => /^[\w-]{1,40}$/.test(id) && s && typeof s === 'object' && typeof s.name === 'string')
+    .sort((a, b) => (+a[1].order || 0) - (+b[1].order || 0));
+  const ids = new Set(entries.map(([id]) => id));
+  for (const s of [...book.sheets]) if (!ids.has(s.id) && s.id !== '_boot') { book.remove(s.id); tabs.delete(s.id); if (cur === s) { cur = null; T = null; } }
+  for (const [id, s] of entries) {
+    let sh = book.get(id);
+    if (!sh) {
+      sh = book.add(String(s.name).slice(0, 31) || 'Sheet', id);
+      tabs.set(id, newTab(+s.order || 0));
+      for (const [docId, d] of mirror) if (d.s === id) applyRow(docId, d, false);
+    } else sh.name = String(s.name).slice(0, 31) || sh.name;
+    const t = tabs.get(id);
+    t.order = +s.order || 0;
+    t.widths = cleanWidths(s.widths);
+    t.chart = cleanChart(s.chart);
+  }
+  const rank = new Map(entries.map(([id], i) => [id, i]));
+  book.sheets.sort((a, b) => (rank.get(a.id) ?? -1) - (rank.get(b.id) ?? -1));
+  if (!book.sheets.length) { const sh = book.add('Sheet1', 'sheet1'); tabs.set(sh.id, newTab(0)); }
+}
+function applyRow(docId, d, removed) {
+  const sh = book.get(d?.s), r = d?.r;
+  if (!sh || !Number.isInteger(r) || r < 0 || r >= MAXR) return;
+  const t = tabs.get(sh.id), o = outbox.get(docId);
+  const c = !removed && d.c && typeof d.c === 'object' ? d.c : {}, st = !removed && d.st && typeof d.st === 'object' ? d.st : {};
+  const cols = new Set([...Object.keys(c), ...Object.keys(st)]);
+  if (removed) for (let ci = 0; ci < MAXC; ci++) { const k = E.key(r, ci); if (sh.cells.has(k) || t.styles.has(k)) cols.add(E.colName(ci)); }
+  for (const L of cols) {
+    if (!/^[A-Z]{1,2}$/.test(L) || E.colIndex(L) >= MAXC) continue;
+    if (o && (L in o.c || o.sent.has(L))) continue; // our own newer value is on its way
+    const k = L + (r + 1), raw = typeof c[L] === 'string' ? c[L] : '', s = cleanStyle(st[L]);
+    if (sh.raw(k) !== raw) sh.set(k, raw);
+    if (s) t.styles.set(k, s); else t.styles.delete(k);
+  }
+}
+let remoteRaf = 0;
+function remoteRefresh() {
+  if (remoteRaf) return;
+  remoteRaf = requestAnimationFrame(() => {
+    remoteRaf = 0;
+    if (!cur || !book.get(cur.id)) { T = null; activate(book.sheets[0].id); }
+    book.recalc();
+    if (!grow([...cur.cells.keys()])) { for (let c = 0; c < COLS; c++) grid.querySelectorAll('col')[c + 1].style.width = widthOf(c) + 'px'; sizeTable(); }
+    render();
+    if (edit) drawRefs(); else selChanged();
+    renderTabs();
+    showPanel('chartPanel', !!T.chart);
+    drawPeers();
+  });
+}
+async function connect() {
+  mode = 'connecting';
+  readOnly = 'Still opening the shared workbook…';
+  $('#veil').hidden = false;
+  const use = n => window.claude.use(n).catch(() => null);
+  [db, room, user, sample, downloads] = await Promise.all([use('db'), use('room'), use('user'), use('sample'), use('downloads')]);
+  if (sample) $('#askBtn').hidden = false;
+  if (!db) { mode = 'local'; readOnly = ''; $('#veil').hidden = true; return startLocal(); }
+  me = user ? await user.me() : null;
+  const canWrite = user ? await user.can('data.write') : null;
+  let gotMeta = false, gotRows = false;
+  const ready = () => {
+    if (!gotMeta || !gotRows || mode !== 'connecting') return;
+    mode = 'live';
+    readOnly = canWrite === false ? 'You can view this workbook but not edit it.' : '';
+    // placeholder from before we connected
+    if (book.get('_boot')) { book.remove('_boot'); tabs.delete('_boot'); T = null; }
+    if (!book.sheets.length) { const sh = book.add('Sheet1', 'sheet1'); tabs.set(sh.id, newTab(0)); }
+    $('#veil').hidden = true;
+    activate(book.sheets[0].id);
+    updateSaveState();
+    $('#people').hidden = false;
+    renderPeople();
+  };
+  const failed = e => {
+    if (mode === 'connecting') { mode = 'local'; readOnly = ''; $('#veil').hidden = true; toast('Couldn’t open the shared workbook; using this browser instead.'); return startLocal(); }
+    readOnly = 'Lost the connection to the shared workbook. Reload the page to keep editing.';
+    updateSaveState();
+    toast(readOnly);
+  };
+  db.doc('wb/meta').onSnapshot(snap => {
+    metaExists = snap.exists;
+    applyMeta(merge(snap.exists ? snap.data() : {}, metaPatch || {}));
+    gotMeta = true;
+    ready();
+    if (mode === 'live') remoteRefresh();
+  }, failed);
+  db.collection('rows').onSnapshot(snap => {
+    for (const ch of snap.docChanges()) {
+      const id = ch.doc.id, d = ch.doc.data();
+      if (ch.type === 'removed') { known.delete(id); mirror.delete(id); applyRow(id, d, true); }
+      else { known.add(id); mirror.set(id, d); applyRow(id, d, false); }
+    }
+    gotRows = true;
+    ready();
+    if (mode === 'live') remoteRefresh();
+  }, failed);
+  if (room) room.onPeers(async ch => { peers = ch.peers; await resolveProfiles(); drawPeers(); renderPeople(); renderTabs(); }, () => {});
+}
+
+// ---------- who else is here ----------
+let peers = [], profiles = {};
+async function resolveProfiles() {
+  const ids = [...new Set(peers.map(p => p.presence?.uid).filter(x => typeof x === 'string'))];
+  if (user && ids.length) profiles = await user.profiles(ids);
+}
+const PEER_COLORS = ['#d9480f', '#0b7285', '#862e9c', '#2b8a3e', '#c2255c', '#5f3dc4'];
+function peerInfo(p) {
+  const pr = profiles[p.presence?.uid];
+  let h = 0;
+  for (const ch of p.peer || '') h = h * 31 + ch.charCodeAt(0) | 0;
+  const name = p.sameTab ? 'You' : p.isMe ? 'You, another tab' : pr?.name || 'Someone';
+  return { name, color: pr?.color || PEER_COLORS[Math.abs(h) % PEER_COLORS.length], avatar: pr?.avatarUrl };
+}
+function sendPresence() {
+  if (!room || !cur || mode !== 'live') return;
+  const g = rect();
+  room.presence({ uid: me?.id || null, sheet: cur.id, sel: [g.r0, g.c0, g.r1, g.c1], editing: !!edit }).catch(() => {});
+}
+function drawPeers() {
+  const layer = $('#peers');
+  layer.replaceChildren();
+  if (!cur) return;
+  for (const p of peers) {
+    const pr = p.presence || {};
+    if (p.sameTab || p.kind !== 'viewer' || pr.sheet !== cur.id || !Array.isArray(pr.sel) || pr.sel.length !== 4) continue;
+    const [r0, c0, r1, c1] = pr.sel.map(n => Math.max(0, Math.trunc(+n) || 0));
+    if (r0 >= ROWS || c0 >= COLS) continue;
+    const info = peerInfo(p), box = document.createElement('div'), tag = document.createElement('span');
+    box.className = 'peer';
+    box.style.setProperty('--pc', info.color);
+    place(box, { r0, c0, r1: Math.min(r1, ROWS - 1), c1: Math.min(c1, COLS - 1) });
+    tag.textContent = info.name + (pr.editing ? ' · typing' : '');
+    if (r0 === 0) tag.className = 'below';
+    box.append(tag);
+    layer.append(box);
+  }
+}
+function renderPeople() {
+  const el = $('#people');
+  if (mode !== 'live') { el.hidden = true; return; }
+  const seen = new Set(), faces = [];
+  for (const p of [...peers].sort((a, b) => b.sameTab - a.sameTab)) {
+    if (p.kind !== 'viewer') continue;
+    const id = p.isMe ? 'me' : p.presence?.uid || p.peer;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    faces.push(p);
+  }
+  const others = faces.filter(p => !p.isMe).length;
+  el.replaceChildren();
+  const live = document.createElement('span');
+  live.className = 'live';
+  live.textContent = others ? `Live · ${others} other${others > 1 ? 's' : ''} here` : 'Live';
+  el.append(live);
+  if (!faces.length) return;
+  const row = document.createElement('span');
+  row.className = 'avatars';
+  for (const p of faces.slice(0, 5)) {
+    const info = peerInfo(p), face = document.createElement(info.avatar ? 'img' : 'i');
+    if (info.avatar) { face.src = info.avatar; face.alt = ''; }
+    face.style.setProperty('--pc', info.color);
+    face.title = p.isMe ? 'You' : info.name;
+    row.append(face);
+  }
+  el.append(row);
+}
+
+// ---------- editing ----------
+function startEdit(text, input = editor) {
+  if (edit) return;
+  if (readOnly) { toast(readOnly); focusGrid(); return; }
+  focus = { ...anchor };
+  drawSel();
+  reveal(anchor.r, anchor.c);
+  const { r, c } = anchor, k = activeKey(), td = tds[r][c], st = T.styles.get(k);
+  edit = { r, c, k, sid: cur.id, input, typed: text != null };
+  editor.value = text ?? cur.raw(k);
+  if (fx.value !== editor.value) fx.value = editor.value;
+  editor.style.fontWeight = st?.b ? '600' : '';
+  editor.style.fontStyle = st?.i ? 'italic' : '';
+  editor.style.left = td.offsetLeft - 1 + 'px';
+  editor.style.top = td.offsetTop - 1 + 'px';
+  editor.style.height = td.offsetHeight + 1 + 'px';
+  editor._min = td.offsetWidth + 1;
+  editor.hidden = false;
+  if (input === editor) {
+    editor.focus({ preventScroll: true });
+    editor.setSelectionRange(editor.value.length, editor.value.length);
+  }
+  editInput();
+  sendPresence();
+}
+function editInput() {
+  const src = edit.input, other = src === editor ? fx : editor;
+  if (other.value !== src.value) other.value = src.value;
+  editor.style.width = '0px';
+  editor.style.width = Math.max(editor._min, editor.scrollWidth + 14) + 'px';
+  drawRefs();
+  updatePop();
+}
+function commitEdit(dr = 0, dc = 0) {
+  if (!edit) return;
+  const { k, r, c, sid } = edit, raw = E.tidy(edit.input.value);
+  endEdit();
+  ants.hidden = true;
+  commit([{ sid, k, raw }]);
+  if (sid === cur.id) go(r + dr, c + dc);
+}
+function cancelEdit() { endEdit(); selChanged(); }
+function endEdit() {
+  edit = null; point = null; ac = null;
+  editor.hidden = true;
+  hl.innerHTML = '';
+  pop.hidden = true;
+  focusGrid();
+  sendPresence();
+}
+const REF_COLORS = [1, 2, 3, 7, 5, 6];
+function drawRefs() {
+  hl.innerHTML = '';
+  const seen = new Map();
+  for (const s of E.refSpans(edit.input.value)) {
+    if (s.r1 >= ROWS || s.c1 >= COLS || (s.sheet && s.sheet.toLowerCase() !== cur.name.toLowerCase())) continue;
+    const id = [s.r0, s.c0, s.r1, s.c1].join();
+    if (!seen.has(id)) seen.set(id, REF_COLORS[seen.size % REF_COLORS.length]);
+    const d = document.createElement('div');
+    d.className = 'ref';
+    d.style.setProperty('--rc', `var(--s${seen.get(id)})`);
+    place(d, s);
+    hl.append(d);
+  }
+}
+// Pointing: while a formula waits for an operand, clicking a cell types its reference.
+function canPoint() {
+  const inp = edit.input, p = inp.selectionStart;
+  if (inp.value[0] !== '=') return false;
+  if (point && point.end === p) return true;
+  return /[=(,+\-*/^&<>:]\s*$/.test(inp.value.slice(0, p));
+}
+function pointAt(pos, extend) {
+  const inp = edit.input;
+  if (!point || point.end !== inp.selectionStart) point = { start: inp.selectionStart, end: inp.selectionStart, a: pos };
+  if (!extend) point.a = pos;
+  const a = point.a;
+  const ref = rangeName({ r0: Math.min(a.r, pos.r), c0: Math.min(a.c, pos.c), r1: Math.max(a.r, pos.r), c1: Math.max(a.c, pos.c) });
+  inp.value = inp.value.slice(0, point.start) + ref + inp.value.slice(point.end);
+  point.end = point.start + ref.length;
+  inp.setSelectionRange(point.end, point.end);
+  editInput();
+}
+
+// ---------- autocomplete & signature help ----------
+const NAMES = Object.keys(E.HELP).sort();
+const splitParams = sig => sig ? sig.split(/, (?![^[]*\])/) : [];
+function updatePop() {
+  const inp = edit?.input;
+  if (!inp || inp.value[0] !== '=') { ac = null; pop.hidden = true; return; }
+  const before = inp.value.slice(0, inp.selectionStart);
+  const inString = (before.match(/"/g) || []).length % 2 === 1;
+  const m = !inString && /(^=|[(,+\-*/^&<>=:\s])([A-Za-z][A-Za-z0-9.]*)$/.exec(before);
+  if (m && !/^[A-Za-z]{1,3}\d+$/.test(m[2])) {
+    const word = m[2].toUpperCase(), items = NAMES.filter(n => n.startsWith(word)).sort((a, b) => a.length - b.length).slice(0, 7);
+    if (items.length && !(items[0] === word && inp.value[before.length] === '(')) {
+      const keep = ac && ac.word === word ? Math.min(ac.i, items.length - 1) : 0;
+      ac = { items, i: keep, word, start: before.length - m[2].length, end: before.length };
+      return renderAc();
+    }
+  }
+  ac = null;
+  const call = currentCall(before.slice(1));
+  if (!call) { pop.hidden = true; return; }
+  const [sig, desc] = E.HELP[call.name], ps = splitParams(sig), at = Math.min(call.arg, ps.length - 1);
+  showPop(`<div class="sig"><b>${call.name}</b>(${ps.map((p, j) => j === at ? `<em>${esc(p)}</em>` : esc(p)).join(', ')})<div>${esc(desc)}</div></div>`);
+}
+function currentCall(src) {
+  let toks;
+  try { toks = E.tokenize(src); } catch { return null; }
+  const stack = [];
+  toks.forEach((t, i) => {
+    if (t.k !== 'op') return;
+    if (t.v === '(') stack.push({ name: toks[i - 1]?.k === 'id' ? toks[i - 1].v.toUpperCase() : null, arg: 0 });
+    else if (t.v === ')') stack.pop();
+    else if (t.v === ',' && stack.length) stack[stack.length - 1].arg++;
+  });
+  const top = stack[stack.length - 1];
+  return top && E.HELP[top.name] ? top : null;
+}
+function renderAc() {
+  const name = ac.items[ac.i];
+  showPop(ac.items.map((n, i) => `<div class="ac${i === ac.i ? ' on' : ''}" data-i="${i}"><b>${n}</b><span>(${esc(E.HELP[n][0])})</span></div>`).join('')
+    + `<div class="ac-desc">${esc(E.HELP[name][1])} <span style="color:var(--muted)">Tab to insert</span></div>`);
+}
+function acceptAc() {
+  const inp = edit.input, name = ac.items[ac.i];
+  const after = inp.value.slice(ac.end), paren = after[0] === '(' ? '' : '(';
+  inp.value = inp.value.slice(0, ac.start) + name + paren + after;
+  const caret = ac.start + name.length + 1;
+  inp.setSelectionRange(caret, caret);
+  ac = null;
+  editInput();
+}
+function acKeys(e) {
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    ac.i = (ac.i + (e.key === 'ArrowDown' ? 1 : -1) + ac.items.length) % ac.items.length;
+    renderAc();
+  } else if (e.key === 'Tab' || e.key === 'Enter') acceptAc();
+  else if (e.key === 'Escape') { ac = null; pop.hidden = true; }
+  else return false;
+  e.preventDefault();
+  return true;
+}
+function showPop(html) {
+  pop.innerHTML = html;
+  pop.hidden = false;
+  pop.classList.toggle('passive', !ac); // signature help must not block clicks that insert references
+  const r = edit.input.getBoundingClientRect();
+  let y = r.bottom + 4;
+  if (y + pop.offsetHeight > innerHeight - 8) y = r.top - pop.offsetHeight - 4;
+  pop.style.left = Math.max(8, Math.min(r.left, innerWidth - pop.offsetWidth - 8)) + 'px';
+  pop.style.top = y + 'px';
+}
+pop.addEventListener('mousedown', e => {
+  e.preventDefault();
+  const item = e.target.closest('.ac');
+  if (item && ac) { ac.i = +item.dataset.i; acceptAc(); }
+});
+
+// ---------- editor & formula bar events ----------
+const DIRS = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
+function editKeys(e) {
+  if (!edit || e.isComposing) return;
+  if (ac && acKeys(e)) return;
+  const k = e.key;
+  if (k === 'Enter') { e.preventDefault(); commitEdit(e.shiftKey ? -1 : 1, 0); }
+  else if (k === 'Tab') { e.preventDefault(); commitEdit(0, e.shiftKey ? -1 : 1); }
+  else if (k === 'Escape') { e.preventDefault(); cancelEdit(); }
+  else if (DIRS[k] && edit.typed && edit.input === editor && editor.value[0] !== '=') { e.preventDefault(); commitEdit(...DIRS[k]); }
+}
+for (const inp of [editor, fx]) {
+  inp.addEventListener('keydown', editKeys);
+  inp.addEventListener('keyup', e => { if (edit && /^(ArrowLeft|ArrowRight|Home|End)$/.test(e.key)) updatePop(); });
+  inp.addEventListener('click', () => edit && updatePop());
+  inp.addEventListener('focus', () => { if (edit) edit.input = inp; });
+  inp.addEventListener('blur', () => setTimeout(() => {
+    if (edit && document.activeElement !== editor && document.activeElement !== fx && document.hasFocus()) commitEdit();
+  }, 0));
+}
+editor.addEventListener('input', () => { point = null; editInput(); });
+fx.addEventListener('focus', () => { if (!edit) startEdit(null, fx); });
+fx.addEventListener('input', () => { if (!edit) startEdit(null, fx); if (!edit) return; point = null; editInput(); });
+
+nb.addEventListener('focus', () => nb.select());
+nb.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const g = parseRange(nb.value.trim().toUpperCase());
+    if (g && g.r1 < MAXR && g.c1 < COLS) {
+      ensureRow(g.r1);
+      anchor = { r: g.r0, c: g.c0 };
+      focus = { r: g.r1, c: g.c1 };
+      selChanged();
+      reveal(g.r0, g.c0);
+    } else toast(`Type a cell like B7 or a range like A1:C9 (columns A–${E.colName(COLS - 1)}).`);
+    focusGrid();
+  } else if (e.key === 'Escape') { selChanged(); focusGrid(); }
+});
+
+// ---------- keyboard on the grid ----------
+function nextSheet(step) {
+  const i = book.sheets.indexOf(cur), n = book.sheets.length;
+  activate(book.sheets[(i + step + n) % n].id);
+}
+kbd.addEventListener('keydown', e => {
+  if (edit || e.isComposing) return;
+  const k = e.key, mod = (e.ctrlKey || e.metaKey) && !e.altKey;
+  if (mod) {
+    const lk = k.toLowerCase();
+    if (lk === 'c' || lk === 'x') { kbd.value = ' '; kbd.select(); return; } // let the native copy/cut event fire
+    if (lk === 'v') { kbd.value = ''; return; }
+    if (lk === 'z') e.shiftKey ? redo() : undo();
+    else if (lk === 'y') redo();
+    else if (lk === 'b') toggleStyle('b');
+    else if (lk === 'i') toggleStyle('i');
+    else if (lk === 'a') { anchor = { r: 0, c: 0 }; focus = { r: ROWS - 1, c: COLS - 1 }; selChanged(); }
+    else if (lk === 'd') fillBy(true);
+    else if (lk === 'r') fillBy(false);
+    else if (k === 'PageDown' || k === 'PageUp') nextSheet(k === 'PageDown' ? 1 : -1);
+    else if (DIRS[k]) jump(...DIRS[k], e.shiftKey);
+    else if (k === 'Home') go(0, 0, e.shiftKey);
+    else if (k === 'End') { let R = 0, C = 0; for (const key of cur.cells.keys()) { const p = E.parseKey(key); R = Math.max(R, p.r); C = Math.max(C, p.c); } go(R, C, e.shiftKey); }
+    else return;
+    e.preventDefault();
+    return;
+  }
+  const at = e.shiftKey ? focus : anchor;
+  if (DIRS[k]) go(at.r + DIRS[k][0], at.c + DIRS[k][1], e.shiftKey);
+  else if (k === 'Enter') go(anchor.r + (e.shiftKey ? -1 : 1), anchor.c);
+  else if (k === 'Tab') go(anchor.r, anchor.c + (e.shiftKey ? -1 : 1));
+  else if (k === 'PageDown' || k === 'PageUp') go(at.r + (k === 'PageDown' ? 20 : -20), at.c, e.shiftKey);
+  else if (k === 'Home') go(at.r, 0, e.shiftKey);
+  else if (k === 'F2') startEdit(null);
+  else if (k === 'Delete' || k === 'Backspace') commit(cellsIn(rect()).filter(x => cur.cells.has(x)).map(x => ({ k: x, raw: '' })));
+  else if (k === 'Escape') { ants.hidden = true; clip = null; }
+  else if (k.length === 1 && !e.ctrlKey && !e.metaKey) startEdit(k);
+  else return;
+  e.preventDefault();
+});
+kbd.addEventListener('input', () => { const v = kbd.value.trim(); kbd.value = ''; if (v && !edit) startEdit(v); });
+
+// ---------- clipboard ----------
+function tsvCell(s) { return /[\t\n"]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+kbd.addEventListener('copy', e => { if (!edit) { e.preventDefault(); e.clipboardData.setData('text/plain', copySel(false)); } });
+kbd.addEventListener('cut', e => { if (!edit) { e.preventDefault(); e.clipboardData.setData('text/plain', copySel(true)); } });
+kbd.addEventListener('paste', e => { if (!edit) { e.preventDefault(); paste(e.clipboardData.getData('text/plain')); } });
+function copySel(cut) {
+  const g = rect(), raws = [], sts = [], lines = [];
+  for (let r = g.r0; r <= g.r1; r++) {
+    const a = [], b = [], t = [];
+    for (let c = g.c0; c <= g.c1; c++) {
+      const k = E.key(r, c);
+      a.push(cur.raw(k));
+      b.push(T.styles.get(k) || null);
+      t.push(tsvCell(show(cur.value(k), isDate(T.styles.get(k)?.f) ? T.styles.get(k).f : '')));
+    }
+    raws.push(a); sts.push(b); lines.push(t.join('\t'));
+  }
+  clip = { sid: cur.id, g, raws, sts, cut, text: lines.join('\n') };
+  place(ants, g);
+  ants.hidden = false;
+  return clip.text;
+}
+function paste(text) {
+  text = text.replace(/\r\n?/g, '\n').replace(/\n$/, '');
+  if (!text) return;
+  const g = rect(), changes = [];
+  let h, w;
+  if (clip && text === clip.text) {
+    // Our own copy: keep formulas (shifted) and formatting; tile it over a larger selection.
+    const ch = clip.raws.length, cw = clip.raws[0].length, sh = g.r1 - g.r0 + 1, sw = g.c1 - g.c0 + 1;
+    h = !clip.cut && sh % ch === 0 ? sh : ch;
+    w = !clip.cut && sw % cw === 0 ? sw : cw;
+    if (clip.cut) for (const k of cellsIn(clip.g)) changes.push({ sid: clip.sid, k, raw: '', st: null });
+    for (let i = 0; i < h; i++) for (let j = 0; j < w; j++) {
+      const raw = clip.raws[i % ch][j % cw], r = g.r0 + i, c = g.c0 + j;
+      const moved = clip.cut ? raw : E.shift(raw, r - clip.g.r0 - i % ch, c - clip.g.c0 - j % cw);
+      changes.push({ k: E.key(r, c), raw: moved, st: clip.sts[i % ch][j % cw] });
+    }
+    if (clip.cut) { clip = null; ants.hidden = true; }
+  } else {
+    const rows = parseDelimited(text, '\t');
+    h = rows.length;
+    w = Math.max(...rows.map(r => r.length));
+    rows.forEach((row, i) => row.forEach((v, j) => changes.push({ k: E.key(g.r0 + i, g.c0 + j), raw: v.trim() ? v : '' })));
+  }
+  commit(changes);
+  anchor = { r: g.r0, c: g.c0 };
+  focus = { r: Math.min(ROWS - 1, g.r0 + h - 1), c: Math.min(COLS - 1, g.c0 + w - 1) };
+  selChanged();
+}
+function parseDelimited(text, d) {
+  const rows = [[]];
+  let f = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) {
+      if (ch !== '"') f += ch;
+      else if (text[i + 1] === '"') { f += '"'; i++; }
+      else q = false;
+    } else if (ch === '"' && f === '') q = true;
+    else if (ch === d) { rows[rows.length - 1].push(f); f = ''; }
+    else if (ch === '\n' || ch === '\r') {
+      if (ch === '\r' && text[i + 1] === '\n') i++;
+      rows[rows.length - 1].push(f); f = ''; rows.push([]);
+    } else f += ch;
+  }
+  rows[rows.length - 1].push(f);
+  while (rows.length > 1 && rows[rows.length - 1].join('') === '') rows.pop();
+  return rows;
+}
+
+// ---------- fill ----------
+function fill(src, dst) {
+  const v = dst.r0 !== src.r0 || dst.r1 !== src.r1;
+  const [a0, a1, b0, b1, d0, d1] = v ? [src.r0, src.r1, src.c0, src.c1, dst.r0, dst.r1] : [src.c0, src.c1, src.r0, src.r1, dst.c0, dst.c1];
+  const K = (i, j) => v ? E.key(i, j) : E.key(j, i);
+  const n = a1 - a0 + 1, changes = [];
+  for (let j = b0; j <= b1; j++) {
+    const raws = [], nums = [];
+    for (let i = a0; i <= a1; i++) {
+      const raw = cur.raw(K(i, j));
+      raws.push(raw);
+      nums.push(raw && raw[0] !== '=' ? E.literal(raw) : null);
+    }
+    const dated = isDate(T.styles.get(K(a0, j))?.f);
+    // Numbers continue as a series (1, 2 → 3, 4); a single date steps a day at a time, like Excel.
+    const series = nums.every(x => typeof x === 'number') && (n > 1 || dated), step = n > 1 ? (nums[n - 1] - nums[0]) / (n - 1) : 1;
+    for (let i = d0; i <= d1; i++) {
+      if (i >= a0 && i <= a1) continue;
+      const s = ((i - a0) % n + n) % n, from = a0 + s, raw = raws[s];
+      let out;
+      if (series) { const x = nums[0] + step * (i - a0); out = dated ? E.isoDate(x) : E.fmtGeneral(x); }
+      else if (raw[0] === '=') out = E.shift(raw, v ? i - from : 0, v ? 0 : i - from);
+      else {
+        const m = n === 1 && /^(.*\D)(\d+)$/.exec(raw); // "Week 1" → "Week 2", "Q1" → "Q2"
+        out = m ? m[1] + String(Math.max(0, +m[2] + i - a0)).padStart(m[2].length, '0') : raw;
+      }
+      changes.push({ k: K(i, j), raw: out, st: T.styles.get(K(from, j)) || null });
+    }
+  }
+  commit(changes);
+}
+function fillBy(down) {
+  const g = rect();
+  if (down) {
+    const src = g.r0 === g.r1 ? { ...g, r0: Math.max(0, g.r0 - 1), r1: Math.max(0, g.r0 - 1) } : { ...g, r1: g.r0 };
+    fill(src, { ...g, r0: src.r0 });
+  } else {
+    const src = g.c0 === g.c1 ? { ...g, c0: Math.max(0, g.c0 - 1), c1: Math.max(0, g.c0 - 1) } : { ...g, c1: g.c0 };
+    fill(src, { ...g, c0: src.c0 });
+  }
+}
+
+// ---------- styles ----------
+function setStyle(prop, value) {
+  commit(cellsIn(rect()).map(k => ({ k, st: { ...T.styles.get(k), [prop]: value } })));
+}
+function toggleStyle(prop) { setStyle(prop, T.styles.get(activeKey())?.[prop] ? 0 : 1); }
+
+// ---------- mouse ----------
+const cellPos = cell => ({ r: cell.parentNode.rowIndex - 1, c: cell.cellIndex - 1 });
+wrap.addEventListener('mousedown', e => {
+  if (e.button !== 0) return;
+  const t = e.target;
+  if (t === wrap) { setTimeout(focusGrid); return; }
+  if (t === fillH) {
+    e.preventDefault();
+    if (edit) commitEdit();
+    if (!readOnly) drag = { mode: 'fill', src: rect(), dst: null };
+    return;
+  }
+  if (t.classList.contains('rz')) {
+    e.preventDefault();
+    const c = t.parentNode.cellIndex - 1;
+    drag = { mode: 'resize', c, x0: e.clientX, w0: widthOf(c) };
+    return;
+  }
+  const cell = t.closest('#grid td, #grid th');
+  if (!cell) return;
+  const pos = cellPos(cell);
+  if (edit && edit.sid === cur.id && pos.r >= 0 && pos.c >= 0 && canPoint()) {
+    e.preventDefault();
+    pointAt(pos, e.shiftKey);
+    drag = { mode: 'point' };
+    return;
+  }
+  if (edit) commitEdit();
+  e.preventDefault();
+  focusGrid();
+  if (pos.r < 0 && pos.c < 0) { anchor = { r: 0, c: 0 }; focus = { r: ROWS - 1, c: COLS - 1 }; }
+  else if (pos.r < 0) {
+    if (!e.shiftKey) anchor = { r: 0, c: pos.c };
+    focus = { r: ROWS - 1, c: pos.c };
+    drag = { mode: 'cols' };
+  } else if (pos.c < 0) {
+    if (!e.shiftKey) anchor = { r: pos.r, c: 0 };
+    focus = { r: pos.r, c: COLS - 1 };
+    drag = { mode: 'rows' };
+  } else {
+    if (!e.shiftKey) anchor = pos;
+    focus = { ...pos };
+    drag = { mode: 'cells' };
+  }
+  selChanged();
+});
+document.addEventListener('mousemove', e => {
+  if (!drag) return;
+  if (drag.mode === 'resize') {
+    const w = Math.max(36, Math.min(600, drag.w0 + e.clientX - drag.x0));
+    T.widths[E.colName(drag.c)] = w;
+    grid.querySelectorAll('col')[drag.c + 1].style.width = w + 'px';
+    sizeTable();
+    drawSel();
+    return;
+  }
+  const cell = e.target.closest?.('#grid td, #grid th');
+  if (!cell) return;
+  const pos = cellPos(cell);
+  if (drag.mode === 'point') { if (pos.r >= 0 && pos.c >= 0) pointAt(pos, true); return; }
+  if (drag.mode === 'fill') return fillMove(pos);
+  if (drag.mode === 'cells' && pos.r >= 0 && pos.c >= 0) focus = pos;
+  else if (drag.mode === 'cols' && pos.c >= 0) focus = { r: ROWS - 1, c: pos.c };
+  else if (drag.mode === 'rows' && pos.r >= 0) focus = { r: pos.r, c: COLS - 1 };
+  else return;
+  selChanged();
+});
+document.addEventListener('mouseup', () => {
+  if (!drag) return;
+  const d = drag;
+  drag = null;
+  if (d.mode === 'resize') {
+    render(); drawChart(); drawPeers(); persistLocal();
+    const L = E.colName(d.c);
+    if (!readOnly) pushMeta({ sheets: { [cur.id]: { widths: { [L]: T.widths[L] } } } });
+  }
+  if (d.mode === 'fill') {
+    fillPrev.hidden = true;
+    if (!d.dst) return;
+    fill(d.src, d.dst);
+    anchor = { r: d.dst.r0, c: d.dst.c0 };
+    focus = { r: d.dst.r1, c: d.dst.c1 };
+    selChanged();
+  }
+  if (!edit && (document.activeElement === document.body || !document.activeElement)) focusGrid();
+});
+function fillMove(pos) {
+  if (pos.r < 0 || pos.c < 0) return;
+  const s = drag.src, d = { ...s };
+  const dy = pos.r > s.r1 ? pos.r - s.r1 : pos.r < s.r0 ? pos.r - s.r0 : 0;
+  const dx = pos.c > s.c1 ? pos.c - s.c1 : pos.c < s.c0 ? pos.c - s.c0 : 0;
+  if (!dx && !dy) { drag.dst = null; fillPrev.hidden = true; return; }
+  if (Math.abs(dy) >= Math.abs(dx)) { if (dy > 0) d.r1 = pos.r; else d.r0 = pos.r; }
+  else if (dx > 0) d.c1 = pos.c; else d.c0 = pos.c;
+  drag.dst = d;
+  place(fillPrev, d);
+  fillPrev.hidden = false;
+}
+wrap.addEventListener('dblclick', e => {
+  const td = e.target.closest('#grid td');
+  if (!td || edit) return;
+  const p = cellPos(td);
+  anchor = p; focus = { ...p };
+  startEdit(null);
+});
+wrap.addEventListener('dragover', e => e.preventDefault());
+wrap.addEventListener('drop', e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) openFile(f); });
+
+// ---------- toolbar ----------
+document.querySelector('.bar').addEventListener('mousedown', e => { if (e.target.closest('button')) e.preventDefault(); });
+document.addEventListener('mousedown', e => {
+  for (const d of document.querySelectorAll('details[open]')) if (!d.contains(e.target)) d.open = false;
+  if (!$('#tabMenu').contains(e.target)) $('#tabMenu').hidden = true;
+});
+$('#undoBtn').onclick = undo;
+$('#redoBtn').onclick = redo;
+$('#boldBtn').onclick = () => toggleStyle('b');
+$('#italBtn').onclick = () => toggleStyle('i');
+$('#fmtSel').onchange = e => { setStyle('f', e.target.value); focusGrid(); };
+$('#chartBtn').onclick = () => {
+  let g = rect();
+  if (g.r0 === g.r1 && g.c0 === g.c1) g = region(g.r0, g.c0);
+  setChart({ range: rangeName(g), type: T.chart?.type || 'bar' });
+};
+function setChart(chart) {
+  T.chart = chart;
+  showPanel('chartPanel', !!chart);
+  persistLocal();
+  if (!readOnly) pushMeta({ sheets: { [cur.id]: { chart } } });
+}
+$('#importBtn').onclick = () => $('#fileIn').click();
+$('#fileIn').onchange = e => { const f = e.target.files[0]; if (f) openFile(f); e.target.value = ''; };
+document.querySelectorAll('[data-exp]').forEach(b => b.onclick = () => {
+  $('#exportMenu').open = false;
+  const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
+  if (b.dataset.exp === 'csv') download((slug(cur.name) || 'sheet') + '.csv', toCSV());
+  else download((slug(plain(book.sheets[0].value('A1'))) || 'workbook') + '.gridwork.json', JSON.stringify(workbookJSON(), null, 1));
+});
+document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => {
+  if (b.dataset.close === 'chartPanel') setChart(null);
+  showPanel(b.dataset.close, false);
+  focusGrid();
+});
+document.querySelectorAll('.seg button').forEach(b => b.onclick = () => { setChart({ ...T.chart, type: b.dataset.type }); drawChart(); });
+function showPanel(id, on = true) {
+  $('#' + id).hidden = !on;
+  $('#side').hidden = $('#chartPanel').hidden && $('#askPanel').hidden;
+  drawSel();
+  drawPeers();
+  drawChart();
+}
+// The block of filled cells around (r, c) — what Chart uses when a single cell is selected.
+function region(r, c) {
+  const has = (r, c) => r >= 0 && c >= 0 && r < ROWS && c < COLS && cur.cells.has(E.key(r, c));
+  const g = { r0: r, c0: c, r1: r, c1: c };
+  const rowHas = rr => { for (let cc = g.c0 - 1; cc <= g.c1 + 1; cc++) if (has(rr, cc)) return true; return false; };
+  const colHas = cc => { for (let rr = g.r0 - 1; rr <= g.r1 + 1; rr++) if (has(rr, cc)) return true; return false; };
+  for (let grew = true; grew;) {
+    grew = false;
+    if (rowHas(g.r0 - 1)) { g.r0--; grew = true; }
+    if (rowHas(g.r1 + 1)) { g.r1++; grew = true; }
+    if (colHas(g.c0 - 1)) { g.c0--; grew = true; }
+    if (colHas(g.c1 + 1)) { g.c1++; grew = true; }
+  }
+  return g;
+}
+let toastT;
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.hidden = false;
+  clearTimeout(toastT);
+  toastT = setTimeout(() => { t.hidden = true; }, 3400);
+}
+
+// ---------- files ----------
+function toCSV() {
+  let R = 0, C = 0;
+  for (const k of cur.cells.keys()) { const p = E.parseKey(k); R = Math.max(R, p.r + 1); C = Math.max(C, p.c + 1); }
+  const lines = [];
+  for (let r = 0; r < R; r++) {
+    const row = [];
+    for (let c = 0; c < C; c++) {
+      const k = E.key(r, c), f = T.styles.get(k)?.f, v = cur.value(k);
+      const s = typeof v === 'number' && isDate(f) ? E.isoDate(v) : plain(v);
+      row.push(/[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s);
+    }
+    lines.push(row.join(','));
+  }
+  return lines.join('\r\n') + '\r\n';
+}
+async function download(name, data) {
+  if (downloads) {
+    try { await downloads.save({ filename: name, data }); toast('Saved ' + name); }
+    catch (e) { if (e?.code !== 'declined') toast('This view can’t save files right now.'); }
+    return;
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([data], { type: name.endsWith('.csv') ? 'text/csv' : 'application/json' }));
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+// Files open as new sheets, so nothing already here is overwritten.
+async function openFile(f) {
+  if (readOnly) { toast(readOnly); return; }
+  const text = await f.text(), base = f.name.replace(/\.[^.]+$/, '').replace(/\.gridwork$/, '');
+  let first = null;
+  if (/\.json$/i.test(f.name)) {
+    let s;
+    try { s = JSON.parse(text); } catch { s = null; }
+    const list = s ? readWorkbook(s) : [];
+    if (!list.length) { toast(`${f.name} isn’t a Gridwork file.`); return; }
+    for (const x of list) { const sh = addSheet(x.name, x); first ||= sh; }
+  } else {
+    const firstLine = text.split('\n', 1)[0];
+    const d = ['\t', ';', ','].reduce((best, ch) => firstLine.split(ch).length > firstLine.split(best).length ? ch : best, ',');
+    const cells = {}, styles = {};
+    parseDelimited(text.replace(/^\uFEFF/, ''), d).forEach((row, r) => row.forEach((v, c) => {
+      if (!v.trim() || r >= MAXR || c >= MAXC) return;
+      const k = E.key(r, c);
+      cells[k] = v;
+      if (E.parseDate(v) != null) styles[k] = { f: /\d:\d\d/.test(v) ? 'dt' : 'date' };
+    }));
+    first = addSheet(base || 'Imported', { cells, styles, widths: {}, chart: null });
+  }
+  if (first) { activate(first.id); toast(`Opened ${f.name} as a new sheet.`); }
+}
+
+// ---------- chart ----------
+const svgEl = $('#chartSvg'), tipEl = $('#tip');
+let chartData = null;
+function ticks(lo, hi) {
+  if (lo === hi) hi = lo + 1;
+  const raw = (hi - lo) / 5, mag = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => s >= raw);
+  const out = [];
+  for (let t = Math.floor(lo / step) * step; t <= Math.ceil(hi / step) * step + step / 2; t += step) out.push(+t.toFixed(10));
+  return out;
+}
+function barPath(x, y0, y1, w) {
+  const h = Math.abs(y1 - y0), r = Math.min(4, h, w / 2), s = y1 < y0 ? 1 : -1;
+  return `M${x},${y0}V${y1 + s * r}Q${x},${y1} ${x + r},${y1}H${x + w - r}Q${x + w},${y1} ${x + w},${y1 + s * r}V${y0}Z`;
+}
+function drawChart() {
+  const chart = T?.chart;
+  if (!chart || $('#chartPanel').hidden) return;
+  const g = parseRange(chart.range);
+  $('#chartRange').textContent = chart.range;
+  document.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.type === chart.type));
+  const fmtAt = (r, c) => T.styles.get(E.key(r, c))?.f;
+  const rows = [];
+  for (let r = g.r0; r <= Math.min(g.r1, g.r0 + 199); r++) {
+    const row = [];
+    for (let c = g.c0; c <= Math.min(g.c1, g.c0 + 19); c++) row.push(cur.value(E.key(r, c)));
+    rows.push(row);
+  }
+  const wide = rows[0].length > 1;
+  const head = rows.length > 1 && (wide ? rows[0].slice(1).some(v => typeof v === 'string') : typeof rows[0][0] === 'string') ? rows.shift() : null;
+  const top = g.r0 + (head ? 1 : 0), dateLabels = wide && isDate(fmtAt(top, g.c0));
+  const labelled = wide && (dateLabels || rows.some(r => typeof r[0] === 'string'));
+  const labels = rows.map((r, i) => labelled ? show(r[0], dateLabels ? fmtAt(top + i, g.c0) : '') : String(i + 1));
+  const series = [];
+  for (let j = labelled ? 1 : 0; j < rows[0].length && series.length < 8; j++) {
+    const vals = rows.map(r => typeof r[j] === 'number' ? r[j] : null);
+    if (vals.some(v => v !== null)) series.push({ name: (head && plain(head[j])) || E.colName(g.c0 + j), vals, f: fmtAt(top, g.c0 + j) });
+  }
+  chartData = { labels, series };
+  const legend = $('#legend');
+  if (!series.length) {
+    $('#chartTitle').textContent = 'Chart';
+    svgEl.innerHTML = '';
+    svgEl.removeAttribute('viewBox');
+    legend.textContent = `No numbers in ${chart.range} yet. Select a table with a label column and number columns, then press Chart.`;
+    return;
+  }
+  $('#chartTitle').textContent = series.length <= 3 ? series.map(s => s.name).join(' vs ') : `${series.length} series`;
+  const W = Math.max(240, $('#chartBox').clientWidth), H = 230, m = { t: 10, r: 6, b: 30 };
+  const all = series.flatMap(s => s.vals).filter(v => v !== null);
+  const tk = ticks(Math.min(0, ...all), Math.max(0, ...all)), lo = tk[0], hi = tk[tk.length - 1];
+  const pctAxis = series.every(s => s.f === 'pct');
+  const tf = new Intl.NumberFormat(undefined, pctAxis ? { style: 'percent', maximumFractionDigits: 0 } : { notation: 'compact', maximumFractionDigits: 1 });
+  m.l = Math.max(...tk.map(t => tf.format(t).length)) * 7 + 12;
+  const pw = W - m.l - m.r, ph = H - m.t - m.b, n = labels.length, band = pw / n;
+  const y = v => m.t + ph - (v - lo) / (hi - lo) * ph, x = i => m.l + band * i;
+  let s = '';
+  for (let i = 0; i < n; i++) s += `<rect class="hit" data-i="${i}" x="${x(i)}" y="${m.t}" width="${band}" height="${ph}"/>`;
+  for (const t of tk) s += `<line class="${t === 0 ? 'base' : 'gl'}" x1="${m.l}" x2="${W - m.r}" y1="${y(t)}" y2="${y(t)}"/><text class="yt" x="${m.l - 8}" y="${y(t)}">${esc(tf.format(t))}</text>`;
+  if (chart.type === 'bar') {
+    const k = series.length, bw = Math.max(2, Math.min(24, (band * 0.72 - (k - 1) * 2) / k)), gw = k * bw + (k - 1) * 2;
+    series.forEach((se, si) => se.vals.forEach((v, i) => {
+      if (v !== null && v !== 0) s += `<path class="mk" fill="var(--s${si + 1})" d="${barPath(x(i) + (band - gw) / 2 + si * (bw + 2), y(0), y(v), bw)}"/>`;
+    }));
+  } else {
+    series.forEach((se, si) => {
+      let d = '', pen = false;
+      se.vals.forEach((v, i) => {
+        if (v === null) { pen = false; return; }
+        d += (pen ? 'L' : 'M') + (x(i) + band / 2).toFixed(1) + ',' + y(v).toFixed(1);
+        pen = true;
+      });
+      s += `<path class="mk" d="${d}" fill="none" stroke="var(--s${si + 1})" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+      se.vals.forEach((v, i) => {
+        if (v !== null && (n <= 24 || i === n - 1)) s += `<circle class="mk" cx="${(x(i) + band / 2).toFixed(1)}" cy="${y(v).toFixed(1)}" r="4" fill="var(--s${si + 1})" stroke="var(--paper)" stroke-width="2"/>`;
+      });
+    });
+  }
+  const every = Math.ceil(n / Math.max(1, Math.floor(pw / 58))), fit = Math.max(3, Math.floor(band * every / 6.5));
+  labels.forEach((l, i) => {
+    if (i % every) return;
+    const txt = l.length > fit ? l.slice(0, fit - 1) + '…' : l;
+    s += `<text class="xt" x="${x(i) + band / 2}" y="${H - m.b + 17}">${esc(txt)}</text>`;
+  });
+  svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svgEl.innerHTML = s;
+  legend.innerHTML = series.length > 1 ? series.map((se, si) => `<span><i style="background:var(--s${si + 1})"></i>${esc(se.name)}</span>`).join('') : '';
+}
+svgEl.addEventListener('mousemove', e => {
+  const i = e.target.dataset?.i;
+  if (i == null || !chartData) { tipEl.hidden = true; return; }
+  const { labels, series } = chartData;
+  tipEl.innerHTML = `<b>${esc(labels[i])}</b>` + series.map((se, si) =>
+    `<div><i style="background:var(--s${si + 1})"></i>${esc(se.name)}<span>${se.vals[i] == null ? '–' : esc(show(se.vals[i], se.f))}</span></div>`).join('');
+  tipEl.hidden = false;
+  const box = $('#chartBox').getBoundingClientRect();
+  let tx = e.clientX - box.left + 14;
+  if (tx + tipEl.offsetWidth > box.width) tx = e.clientX - box.left - tipEl.offsetWidth - 14;
+  tipEl.style.left = Math.max(0, tx) + 'px';
+  tipEl.style.top = Math.max(0, e.clientY - box.top - tipEl.offsetHeight - 10) + 'px';
+});
+svgEl.addEventListener('mouseleave', () => { tipEl.hidden = true; });
+addEventListener('resize', () => { drawSel(); drawChart(); drawPeers(); });
+
+// ---------- Build with Claude (only inside a Claude artifact viewer) ----------
+let askCtl = null;
+const AI_ERRORS = {
+  rate_limited: 'Claude is busy or you’ve hit a usage limit. Try again in a little while.',
+  session_expired: 'Your Claude session expired. Sign in again, then retry.',
+  refused: 'Claude declined that one. Try describing the sheet differently.',
+  invalid_json: 'The reply wasn’t a usable sheet. Try again, or ask for something smaller.',
+  bad_shape: 'The reply wasn’t a usable sheet. Try again, or ask for something smaller.',
+  empty_completion: 'Claude returned nothing. Try a simpler request.',
+  prompt_too_large: 'That description is too long. Shorten it and retry.',
+};
+const AI_GONE = ['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed'];
+function workbookContext() {
+  let out = '';
+  for (const s of book.sheets.slice(0, 6)) {
+    const lines = [...s.cells.keys()].map(k => [k, E.parseKey(k)]).filter(([, p]) => p.r < 40 && p.c < 12)
+      .sort((a, b) => a[1].r - b[1].r || a[1].c - b[1].c).slice(0, 160).map(([k]) => `${k}: ${s.raw(k).slice(0, 70)}`);
+    if (lines.length) out += `\nSheet ${E.quoteSheet(s.name)}:\n${lines.join('\n')}\n`;
+  }
+  return out.slice(0, 12000);
+}
+function aiPrompt(req) {
+  const fns = NAMES.filter(n => n !== 'AVG' && n !== 'CONCATENATE').map(n => `${n}(${E.HELP[n][0]})`).join('; ');
+  const context = workbookContext();
+  return `You are building one new sheet in Gridwork, a small Excel-like app. The user asked for:
+"""${req.slice(0, 2000)}"""
+${context ? `\nThe workbook already has these sheets (cell: contents). When the request is about them, reference their cells from the new sheet with formulas like Budget!C12 or 'My Sheet'!A1:B9 so it stays live:\n${context}` : ''}
+Reply with ONLY one JSON object in this shape:
+{"title": "Short sheet name",
+ "cells": {"A1": "Title", "A3": "Rate", "B3": "0.075", "A5": "Item", "B5": "Cost", "C5": "Due", "B9": "=SUM(B6:B8)", "C6": "2026-10-01"},
+ "bold": ["A1", "A5:D5"],
+ "formats": {"B3": "pct", "B6:B9": "cur", "C6:C8": "date"},
+ "widths": {"A": 180},
+ "chart": {"range": "A5:C8", "type": "bar"}}
+
+Rules:
+- "title" is a sheet-tab name, at most 28 characters. Write "cells" next, in reading order (row by row). Each value is a string exactly as a person would type it: a number ("1200", "0.075"), text, a date as "YYYY-MM-DD", or a formula starting with "=".
+- Make it live: every derived number is a formula. Put inputs/assumptions in clearly labelled cells near the top and reference them (with $ anchors like $B$3 where a formula repeats down rows). Never type a computed result as a number.
+- Formula language is Excel-style: + - * / ^ & = <> < > <= >= and postfix %, "double-quoted" text, TRUE/FALSE, A1 references, A1:B9 ranges, Sheet!A1 references. Dates are day numbers, so due-dates can be added to and subtracted. Only these functions exist: ${fns}. No array formulas or named ranges.
+- Layout: title in A1, a blank row, then the table with one header row. Columns A–Z, at most 150 rows, under 600 cells. Totals or a summary go below or beside the table.
+- Realistic example numbers the user can overwrite. Short labels.
+- formats: "num" (1,234.50), "int" (1,235), "cur" (local currency), "pct" (store 7.5% as 0.075), "date", "dt" (date and time). Keys are cells or ranges.
+- bold: the title, the header row, total rows. widths: pixel widths only for columns needing more than 96px.
+- chart: optional. A range whose first column holds labels and first row holds series names, 1–4 numeric series, type "bar" or "line". Use null when a chart doesn't help.`;
+}
+function streamCells(sh, text) {
+  const at = text.indexOf('"cells"');
+  if (at < 0) return 0;
+  let body = text.slice(at);
+  const end = body.search(/"(bold|formats|widths|chart)"\s*:/);
+  if (end > 0) body = body.slice(0, end);
+  let n = 0;
+  for (const m of body.matchAll(/"([A-Za-z]{1,2}\d{1,4})"\s*:\s*"((?:[^"\\]|\\.)*)"/g)) {
+    const p = E.parseKey(m[1]);
+    if (!p || p.r >= MAXR || p.c >= MAXC) continue;
+    let v;
+    try { v = JSON.parse('"' + m[2] + '"'); } catch { continue; }
+    const k = E.key(p.r, p.c);
+    if (sh.raw(k) !== v) sh.set(k, v);
+    n++;
+  }
+  return n;
+}
+function fromAI(res) {
+  if (!res || typeof res.cells !== 'object') throw { code: 'bad_shape' };
+  const [s] = readWorkbook({ cells: res.cells });
+  if (!Object.keys(s.cells).length) throw { code: 'bad_shape' };
+  const st = {}, each = (rg, fn) => {
+    const g = parseRange(String(rg).toUpperCase());
+    if (g && (g.r1 - g.r0 + 1) * (g.c1 - g.c0 + 1) <= 5000 && g.r1 < MAXR && g.c1 < MAXC) cellsIn(g).forEach(fn);
+  };
+  for (const rg of Array.isArray(res.bold) ? res.bold : []) each(rg, k => { st[k] = { ...st[k], b: 1 }; });
+  for (const [rg, f] of Object.entries(res.formats || {})) if (FMT[f]) each(rg, k => { st[k] = { ...st[k], f }; });
+  const cr = String((typeof res.chart === 'string' ? res.chart : res.chart?.range) || '').toUpperCase();
+  return {
+    title: String(res.title || '').replace(BAD_NAME, ' ').trim().slice(0, 28) || 'New sheet',
+    cells: s.cells, styles: st, widths: cleanWidths(res.widths),
+    chart: parseRange(cr) ? { range: cr, type: res.chart?.type === 'line' ? 'line' : 'bar' } : null,
+  };
+}
+let softRaf = 0;
+function softRender() {
+  if (softRaf) return;
+  softRaf = requestAnimationFrame(() => {
+    softRaf = 0;
+    grow([...cur.cells.keys()]);
+    book.recalc();
+    render();
+    drawSel();
+  });
+}
+async function askClaude() {
+  const req = $('#askText').value.trim(), st = $('#askStatus');
+  if (!req) { $('#askText').focus(); st.textContent = 'Describe the sheet first — or pick one of the examples.'; return; }
+  if (readOnly) { st.textContent = readOnly; return; }
+  if (edit) commitEdit();
+  const prompt = aiPrompt(req);
+  const sh = addSheet('Claude draft');
+  if (!sh) return;
+  activate(sh.id);
+  askCtl = new AbortController();
+  $('#askGo').disabled = true;
+  $('#askStop').hidden = false;
+  st.textContent = 'Thinking… this usually takes 10–60 seconds.';
+  try {
+    const res = await sample.json(prompt, {
+      signal: askCtl.signal,
+      onText: ({ text }) => {
+        if (!book.get(sh.id) || cur !== sh) return;
+        const n = streamCells(sh, text);
+        if (n) { st.textContent = `Writing cells… ${n}`; softRender(); }
+      },
+    });
+    const out = fromAI(res);
+    cancelAnimationFrame(softRaf); softRaf = 0;
+    if (!book.get(sh.id)) return;
+    sh.cells.clear();
+    const t = tabs.get(sh.id);
+    t.widths = out.widths;
+    t.chart = out.chart;
+    renameSheet(sh.id, uniqueName(out.title));
+    pushMeta({ sheets: { [sh.id]: { widths: t.widths, chart: t.chart } } });
+    const keys = new Set([...Object.keys(out.cells), ...Object.keys(out.styles)]);
+    commit([...keys].map(k => ({ sid: sh.id, k, raw: out.cells[k] || '', st: out.styles[k] || null })), { history: false });
+    T = null;
+    activate(sh.id);
+    st.textContent = `Added “${sh.name}” with ${Object.keys(out.cells).length} cells. Click any number to see its formula.`;
+  } catch (e) {
+    cancelAnimationFrame(softRaf); softRaf = 0;
+    if (book.get(sh.id)) deleteSheet(sh.id, true);
+    const code = e?.code;
+    if (code === 'cancelled') st.textContent = 'Stopped. Nothing was added.';
+    else if (AI_GONE.includes(code)) { st.textContent = 'Claude isn’t available in this view.'; $('#askBtn').hidden = true; }
+    else st.textContent = AI_ERRORS[code] || 'Couldn’t reach Claude. Check your connection and try again.';
+  } finally {
+    $('#askGo').disabled = false;
+    $('#askStop').hidden = true;
+    askCtl = null;
+  }
+}
+$('#askBtn').onclick = () => { showPanel('askPanel', $('#askPanel').hidden); if (!$('#askPanel').hidden) $('#askText').focus(); };
+$('#askGo').onclick = askClaude;
+$('#askStop').onclick = () => askCtl?.abort();
+$('#chips').onclick = e => { if (e.target.tagName === 'BUTTON') { $('#askText').value = e.target.textContent; $('#askText').focus(); } };
+$('#askText').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) askClaude(); });
+
+// ---------- start ----------
+function loadWorkbook(list) {
+  for (const x of list) {
+    const sh = book.add(uniqueName(x.name), x.id && !book.get(x.id) ? x.id : undefined), t = newTab(book.sheets.length);
+    tabs.set(sh.id, t);
+    for (const [k, raw] of Object.entries(x.cells)) sh.set(k, raw);
+    for (const [k, st] of Object.entries(x.styles)) t.styles.set(k, st);
+    t.widths = x.widths;
+    t.chart = x.chart;
+  }
+}
+function startLocal() {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(STORE) || 'null'); } catch { /* storage blocked */ }
+  for (const s of [...book.sheets]) { book.remove(s.id); tabs.delete(s.id); }
+  T = null;
+  let list = saved ? readWorkbook(saved) : [];
+  if (!list.length) list = readWorkbook(window.GRIDWORK_SAMPLE || {});
+  if (!list.length) list = [{ name: 'Sheet1', cells: {}, styles: {}, widths: {}, chart: null }];
+  loadWorkbook(list);
+  book.recalc();
+  activate(saved?.active && book.get(saved.active) ? saved.active : book.sheets[0].id);
+  setSaveState(saved ? 'Saved in this browser' : 'Example workbook · edits save in this browser');
+}
+if (window.claude?.use) {
+  // Inside Claude: a blank placeholder while the shared workbook opens.
+  const sh = book.add('Sheet1', '_boot');
+  tabs.set(sh.id, newTab(0));
+  activate(sh.id);
+  connect();
+} else startLocal();
+focusGrid();
+})();
+</script>
