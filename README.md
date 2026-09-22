@@ -2,6 +2,8 @@
 
 A spreadsheet in plain HTML and JavaScript with no dependencies and no build step. It includes its own formula engine, multiple sheets, dates, live charts, and Excel-style editing. Run as a Claude artifact, it adds live multi-person editing and a "Build with Claude" button that writes new sheets from a sentence.
 
+**Try it:** https://wiz4rd-om24.github.io/gridwork/
+
 ## Run it
 
 ```bash
