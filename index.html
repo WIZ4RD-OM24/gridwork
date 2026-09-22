@@ -232,6 +232,10 @@ select.tb { padding: 0 4px; border-color: var(--line); background: var(--paper);
 #chartSvg .mk { pointer-events: none; }
 #chartSvg .hit { fill: transparent; }
 #chartSvg .hit:hover { fill: var(--wash); }
+#chartSvg .sl:hover, #chartSvg .pt:hover { opacity: 0.8; }
+#chartSvg .tot { font-family: var(--mono); font-size: 15px; fill: var(--ink); text-anchor: middle; dominant-baseline: middle; }
+.seg.types { display: flex; margin-top: 8px; }
+.seg.types button { flex: 1; padding: 3px 0; }
 .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 8px; font-size: 12.5px; color: var(--ink-2); }
 .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
 .tip { position: absolute; z-index: 5; pointer-events: none; min-width: 120px; background: var(--paper); border: 1px solid var(--line-2); border-radius: 6px; box-shadow: var(--shadow); padding: 6px 9px; font-size: 12.5px; white-space: nowrap; }
@@ -373,11 +377,15 @@ select.tb { padding: 0 4px; border-color: var(--line); background: var(--paper);
       <section class="panel" id="chartPanel" hidden>
         <div class="ph">
           <h2 id="chartTitle">Chart</h2>
-          <div class="seg" role="group" aria-label="Chart type">
-            <button data-type="bar" aria-pressed="true">Bar</button>
-            <button data-type="line" aria-pressed="false">Line</button>
-          </div>
           <button class="x" data-close="chartPanel" aria-label="Close chart">×</button>
+        </div>
+        <div class="seg types" role="group" aria-label="Chart type">
+          <button data-type="bar" aria-pressed="true">Bar</button>
+          <button data-type="stacked" aria-pressed="false">Stacked</button>
+          <button data-type="line" aria-pressed="false">Line</button>
+          <button data-type="area" aria-pressed="false">Area</button>
+          <button data-type="pie" aria-pressed="false">Donut</button>
+          <button data-type="scatter" aria-pressed="false">Scatter</button>
         </div>
         <p class="sub">From <code id="chartRange"></code> · redraws as you edit</p>
         <div class="chart" id="chartBox">
@@ -947,7 +955,9 @@ const cleanWidths = w => {
   }
   return out;
 };
-const cleanChart = c => c && typeof c === 'object' && parseRange(String(c.range || '').toUpperCase()) ? { range: String(c.range).toUpperCase(), type: c.type === 'line' ? 'line' : 'bar' } : null;
+const CHART_TYPES = ['bar', 'stacked', 'line', 'area', 'pie', 'scatter'];
+const chartType = t => CHART_TYPES.includes(t) ? t : 'bar';
+const cleanChart = c => c && typeof c === 'object' && parseRange(String(c.range || '').toUpperCase()) ? { range: String(c.range).toUpperCase(), type: chartType(c.type) } : null;
 // Accepts version 1 (one sheet), version 2 (a workbook) and the sample's { formats: [[range, style]] } shorthand.
 function readWorkbook(s) {
   const list = Array.isArray(s?.sheets) ? s.sheets : s?.cells ? [{ name: 'Sheet1', ...s }] : [];
@@ -2391,32 +2401,77 @@ function drawChart() {
   }
   $('#chartTitle').textContent = series.length <= 3 ? series.map(s => s.name).join(' vs ') : `${series.length} series`;
   const W = Math.max(240, $('#chartBox').clientWidth), H = 230, m = { t: 10, r: 6, b: 30 };
-  const all = series.flatMap(s => s.vals).filter(v => v !== null);
-  const tk = ticks(Math.min(0, ...all), Math.max(0, ...all)), lo = tk[0], hi = tk[tk.length - 1];
-  const pctAxis = series.every(s => s.f === 'pct');
-  const tf = new Intl.NumberFormat(undefined, pctAxis ? { style: 'percent', maximumFractionDigits: 0 } : { notation: 'compact', maximumFractionDigits: 1 });
+  const type = chart.type, note = msg => { svgEl.innerHTML = ''; svgEl.removeAttribute('viewBox'); legend.textContent = msg; };
+  const fmtFor = f => new Intl.NumberFormat(undefined, f === 'pct' ? { style: 'percent', maximumFractionDigits: 0 } : { notation: 'compact', maximumFractionDigits: 1 });
+  const done = (s, leg) => { svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`); svgEl.innerHTML = s; legend.innerHTML = leg; };
+  let s = '';
+  if (type === 'pie') {
+    // ponytail: colors repeat after 8 slices; fold the tail into "Other" if big donuts get common.
+    const se = series[0], vals = se.vals.map(v => v > 0 ? v : 0), tot = vals.reduce((a, b) => a + b, 0);
+    if (!tot) return note(`A donut needs positive numbers in ${se.name}.`);
+    chartData.pie = tot;
+    $('#chartTitle').textContent = se.name;
+    const cx = W / 2, cy = H / 2, R = H / 2 - 6;
+    let a = -Math.PI / 2;
+    vals.forEach((v, i) => {
+      if (!v) return;
+      const b = a + v / tot * 2 * Math.PI;
+      s += `<path class="sl" data-i="${i}" fill="var(--s${i % 8 + 1})" stroke="var(--paper)" stroke-width="1.5" d="${arcPath(cx, cy, R, R * 0.6, a, b)}"/>`;
+      a = b;
+    });
+    s += `<text class="tot" x="${cx}" y="${cy}">${esc(show(tot, se.f))}</text>`;
+    return done(s, labels.map((l, i) => vals[i] ? `<span><i style="background:var(--s${i % 8 + 1})"></i>${esc(l)} · ${Math.round(vals[i] / tot * 100)}%</span>` : '').join(''));
+  }
+  const scatter = type === 'scatter', xs = series[0], ys = scatter ? series.slice(1) : series;
+  if (scatter && !ys.length) return note('A scatter plot needs two number columns: x first, then y.');
+  if (scatter) { m.r = 16; $('#chartTitle').textContent = `${ys.map(se => se.name).join(', ')} vs ${xs.name}`; }
+  const all = type === 'stacked'
+    ? labels.flatMap((_, i) => { let p = 0, q = 0; for (const se of series) { const v = se.vals[i] ?? 0; if (v > 0) p += v; else q += v; } return [p, q]; })
+    : ys.flatMap(se => se.vals).filter(v => v !== null);
+  const tk = scatter ? ticks(Math.min(...all), Math.max(...all)) : ticks(Math.min(0, ...all), Math.max(0, ...all)), lo = tk[0], hi = tk[tk.length - 1];
+  const tf = fmtFor(ys.every(se => se.f === 'pct') ? 'pct' : '');
   m.l = Math.max(...tk.map(t => tf.format(t).length)) * 7 + 12;
   const pw = W - m.l - m.r, ph = H - m.t - m.b, n = labels.length, band = pw / n;
-  const y = v => m.t + ph - (v - lo) / (hi - lo) * ph, x = i => m.l + band * i;
-  let s = '';
-  for (let i = 0; i < n; i++) s += `<rect class="hit" data-i="${i}" x="${x(i)}" y="${m.t}" width="${band}" height="${ph}"/>`;
+  const y = v => m.t + ph - (v - lo) / (hi - lo) * ph, x = i => m.l + band * i, base = y(Math.min(Math.max(0, lo), hi));
+  if (!scatter) for (let i = 0; i < n; i++) s += `<rect class="hit" data-i="${i}" x="${x(i)}" y="${m.t}" width="${band}" height="${ph}"/>`;
   for (const t of tk) s += `<line class="${t === 0 ? 'base' : 'gl'}" x1="${m.l}" x2="${W - m.r}" y1="${y(t)}" y2="${y(t)}"/><text class="yt" x="${m.l - 8}" y="${y(t)}">${esc(tf.format(t))}</text>`;
-  if (chart.type === 'bar') {
+  if (scatter) {
+    const xv = xs.vals.filter(v => v !== null), xt = ticks(Math.min(...xv), Math.max(...xv)), xlo = xt[0], xhi = xt[xt.length - 1];
+    const X = v => m.l + (v - xlo) / (xhi - xlo) * pw, xf = fmtFor(xs.f), step = Math.ceil(xt.length / Math.max(1, Math.floor(pw / 50)));
+    xt.forEach((t, k) => { if (!(k % step)) s += `<text class="xt" x="${X(t)}" y="${H - m.b + 17}">${esc(xf.format(t))}</text>`; });
+    ys.forEach((se, si) => se.vals.forEach((v, i) => {
+      if (v !== null && xs.vals[i] !== null) s += `<circle class="pt" data-i="${i}" cx="${X(xs.vals[i]).toFixed(1)}" cy="${y(v).toFixed(1)}" r="4.5" fill="var(--s${si + 2})" fill-opacity="0.8" stroke="var(--paper)" stroke-width="1"/>`;
+    }));
+    return done(s, `<span>x: ${esc(xs.name)}</span>` + ys.map((se, si) => `<span><i style="background:var(--s${si + 2})"></i>${esc(se.name)}</span>`).join(''));
+  }
+  if (type === 'bar') {
     const k = series.length, bw = Math.max(2, Math.min(24, (band * 0.72 - (k - 1) * 2) / k)), gw = k * bw + (k - 1) * 2;
     series.forEach((se, si) => se.vals.forEach((v, i) => {
       if (v !== null && v !== 0) s += `<path class="mk" fill="var(--s${si + 1})" d="${barPath(x(i) + (band - gw) / 2 + si * (bw + 2), y(0), y(v), bw)}"/>`;
     }));
+  } else if (type === 'stacked') {
+    const bw = Math.max(3, Math.min(36, band * 0.62));
+    for (let i = 0; i < n; i++) {
+      let p = 0, q = 0;
+      series.forEach((se, si) => {
+        const v = se.vals[i];
+        if (!v) return;
+        const from = v > 0 ? p : q, to = from + v;
+        if (v > 0) p = to; else q = to;
+        s += `<rect class="mk" fill="var(--s${si + 1})" stroke="var(--paper)" stroke-width="1" x="${x(i) + (band - bw) / 2}" y="${Math.min(y(from), y(to))}" width="${bw}" height="${Math.abs(y(to) - y(from))}"/>`;
+      });
+    }
   } else {
     series.forEach((se, si) => {
-      let d = '', pen = false;
+      const px = i => (x(i) + band / 2).toFixed(1), runs = [[]];
+      se.vals.forEach((v, i) => { if (v === null) runs.push([]); else runs[runs.length - 1].push([px(i), y(v).toFixed(1)]); });
+      for (const run of runs.filter(r => r.length)) {
+        const d = run.map((pt, k) => (k ? 'L' : 'M') + pt).join('');
+        if (type === 'area') s += `<path class="mk" d="${d}L${run[run.length - 1][0]},${base}L${run[0][0]},${base}Z" fill="var(--s${si + 1})" fill-opacity="0.16"/>`;
+        s += `<path class="mk" d="${d}" fill="none" stroke="var(--s${si + 1})" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+      }
       se.vals.forEach((v, i) => {
-        if (v === null) { pen = false; return; }
-        d += (pen ? 'L' : 'M') + (x(i) + band / 2).toFixed(1) + ',' + y(v).toFixed(1);
-        pen = true;
-      });
-      s += `<path class="mk" d="${d}" fill="none" stroke="var(--s${si + 1})" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
-      se.vals.forEach((v, i) => {
-        if (v !== null && (n <= 24 || i === n - 1)) s += `<circle class="mk" cx="${(x(i) + band / 2).toFixed(1)}" cy="${y(v).toFixed(1)}" r="4" fill="var(--s${si + 1})" stroke="var(--paper)" stroke-width="2"/>`;
+        if (v !== null && (n <= 24 || i === n - 1)) s += `<circle class="mk" cx="${px(i)}" cy="${y(v).toFixed(1)}" r="4" fill="var(--s${si + 1})" stroke="var(--paper)" stroke-width="2"/>`;
       });
     });
   }
@@ -2426,16 +2481,22 @@ function drawChart() {
     const txt = l.length > fit ? l.slice(0, fit - 1) + '…' : l;
     s += `<text class="xt" x="${x(i) + band / 2}" y="${H - m.b + 17}">${esc(txt)}</text>`;
   });
-  svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  svgEl.innerHTML = s;
-  legend.innerHTML = series.length > 1 ? series.map((se, si) => `<span><i style="background:var(--s${si + 1})"></i>${esc(se.name)}</span>`).join('') : '';
+  done(s, series.length > 1 ? series.map((se, si) => `<span><i style="background:var(--s${si + 1})"></i>${esc(se.name)}</span>`).join('') : '');
+}
+// A donut slice from angle a to b (radians, clockwise from 3 o'clock).
+function arcPath(cx, cy, R, r, a, b) {
+  b = Math.min(b, a + 2 * Math.PI - 1e-4); // a lone 100% slice still draws as a full ring
+  const p = (rad, t) => `${(cx + rad * Math.cos(t)).toFixed(2)},${(cy + rad * Math.sin(t)).toFixed(2)}`, big = b - a > Math.PI ? 1 : 0;
+  return `M${p(R, a)}A${R},${R} 0 ${big} 1 ${p(R, b)}L${p(r, b)}A${r},${r} 0 ${big} 0 ${p(r, a)}Z`;
 }
 svgEl.addEventListener('mousemove', e => {
   const i = e.target.dataset?.i;
   if (i == null || !chartData) { tipEl.hidden = true; return; }
   const { labels, series } = chartData;
-  tipEl.innerHTML = `<b>${esc(labels[i])}</b>` + series.map((se, si) =>
-    `<div><i style="background:var(--s${si + 1})"></i>${esc(se.name)}<span>${se.vals[i] == null ? '–' : esc(show(se.vals[i], se.f))}</span></div>`).join('');
+  const { pie } = chartData, one = series[0];
+  tipEl.innerHTML = `<b>${esc(labels[i])}</b>` + (pie
+    ? `<div><i style="background:var(--s${i % 8 + 1})"></i>${esc(one.name)}<span>${esc(show(one.vals[i], one.f))} · ${Math.round(one.vals[i] / pie * 100)}%</span></div>`
+    : series.map((se, si) => `<div><i style="background:var(--s${si + 1})"></i>${esc(se.name)}<span>${se.vals[i] == null ? '–' : esc(show(se.vals[i], se.f))}</span></div>`).join(''));
   tipEl.hidden = false;
   const box = $('#chartBox').getBoundingClientRect();
   let tx = e.clientX - box.left + 14;
@@ -2489,7 +2550,7 @@ Rules:
 - Realistic example numbers the user can overwrite. Short labels.
 - formats: "num" (1,234.50), "int" (1,235), "cur" (local currency), "pct" (store 7.5% as 0.075), "date", "dt" (date and time). Keys are cells or ranges.
 - bold: the title, the header row, total rows. widths: pixel widths only for columns needing more than 96px.
-- chart: optional. A range whose first column holds labels and first row holds series names, 1–4 numeric series, type "bar" or "line". Use null when a chart doesn't help.`;
+- chart: optional. A range whose first column holds labels and first row holds series names, 1–4 numeric series, type "bar", "stacked" (parts of a whole across labels), "line", "area", "pie" (one series as shares of a total, at most 8 labels) or "scatter" (first number column is x). Use null when a chart doesn't help.`;
 }
 function streamCells(sh, text) {
   const at = text.indexOf('"cells"');
@@ -2523,7 +2584,7 @@ function fromAI(res) {
   return {
     title: String(res.title || '').replace(BAD_NAME, ' ').trim().slice(0, 28) || 'New sheet',
     cells: s.cells, styles: st, widths: cleanWidths(res.widths),
-    chart: parseRange(cr) ? { range: cr, type: res.chart?.type === 'line' ? 'line' : 'bar' } : null,
+    chart: parseRange(cr) ? { range: cr, type: chartType(res.chart?.type) } : null,
   };
 }
 let softRaf = 0;

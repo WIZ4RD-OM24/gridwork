@@ -42,7 +42,7 @@ Circular references show `#CYCLE!`. Every error explains itself in the status ba
 - Freeze panes, so header rows and label columns stay put while you scroll.
 - Conditional formatting: color a range when a formula is true, e.g. `=C2>B2` to turn over-budget rows red.
 
-**Charts.** Select a table and press Chart for a bar or line chart. It redraws as the data changes and shows a tooltip on hover.
+**Charts.** Select a table and press Chart, then pick a bar, stacked bar, line, area, donut or scatter chart. It redraws as the data changes and shows a tooltip on hover.
 
 **Files.** Real Excel files: `.xlsx` import and export keep every sheet, formula, number format, column width and frozen header. CSV/TSV import (the delimiter is detected), CSV export per sheet, and a `.gridwork.json` file that keeps every sheet with its formulas, formatting and charts.
 
