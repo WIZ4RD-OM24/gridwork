@@ -56,7 +56,7 @@
   color-scheme: dark;
 }
 [hidden] { display: none !important; }
-html, body { height: 100%; }
+html, body { height: 100%; height: 100dvh; } /* dvh follows a phone's collapsing address bar */
 body { margin: 0; background: var(--desk); color: var(--ink); font: 14px/1.4 var(--sans); overflow: hidden; }
 button, select, input, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
@@ -120,7 +120,7 @@ select.tb { padding: 0 4px; border-color: var(--line); background: var(--paper);
 
 /* sheet */
 .work { flex: 1; min-height: 0; display: flex; gap: 12px; }
-.book { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.book { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
 .sheet { flex: 1; min-height: 0; position: relative; overflow: auto; background: var(--paper); border: 1px solid var(--line-2); border-radius: 6px; isolation: isolate; overscroll-behavior: contain; }
 #grid { border-collapse: separate; border-spacing: 0; table-layout: fixed; font-variant-numeric: tabular-nums; cursor: cell; user-select: none; -webkit-user-select: none; }
 #grid th, #grid td { height: 26px; box-sizing: border-box; padding: 0 6px; border: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1683,12 +1683,17 @@ wrap.addEventListener('mousedown', e => {
     focus = { r: pos.r, c: COLS - 1 };
     drag = { mode: 'rows' };
   } else {
+    // Phones have no double-click: tapping the cell that's already selected edits it.
+    const again = touched && !e.shiftKey && anchor.r === pos.r && anchor.c === pos.c && focus.r === pos.r && focus.c === pos.c;
     if (!e.shiftKey) anchor = pos;
     focus = { ...pos };
+    if (again) { selChanged(); return startEdit(null); }
     drag = { mode: 'cells' };
   }
   selChanged();
 });
+let touched = false;
+wrap.addEventListener('pointerdown', e => { touched = e.pointerType === 'touch'; });
 document.addEventListener('mousemove', e => {
   if (!drag) return;
   if (drag.mode === 'resize') {
