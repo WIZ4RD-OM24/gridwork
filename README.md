@@ -8,10 +8,10 @@ A spreadsheet in plain HTML and JavaScript with no dependencies and no build ste
 python -m http.server 8765
 ```
 
-Then open http://localhost:8765. Any static file server works. The page loads `engine.js` and `sample.js` from the same folder. Your workbook saves in the browser; use **Export** for a file you can keep.
+Then open http://localhost:8765. Any static file server works. The page loads `engine.js`, `xlsx.js` and `sample.js` from the same folder. Your workbook saves in the browser; use **Export** for a file you can keep.
 
 ```bash
-node test.js      # 192 checks on the formula engine
+node test.js      # 239 checks on the formula engine and .xlsx reader/writer
 ```
 
 ## What it does
@@ -36,9 +36,15 @@ Circular references show `#CYCLE!`. Every error explains itself in the status ba
 - Copy and paste with Excel and Google Sheets, undo/redo, Ctrl+Arrow to jump to the edge of your data, resizable columns.
 - Long text spills into empty cells next to it.
 
+**Rows, columns and views.** Right-click a cell or use the **Data** menu:
+- Insert or delete rows and columns. Formulas, charts and rules that point past the change shift with it; references to deleted cells become `#REF!`.
+- Sort a table by any column, or filter a column to hide rows (click ▾ in the header).
+- Freeze panes, so header rows and label columns stay put while you scroll.
+- Conditional formatting: color a range when a formula is true, e.g. `=C2>B2` to turn over-budget rows red.
+
 **Charts.** Select a table and press Chart for a bar or line chart. It redraws as the data changes and shows a tooltip on hover.
 
-**Files.** CSV/TSV import (the delimiter is detected), CSV export per sheet, and a `.gridwork.json` file that keeps every sheet with its formulas, formatting and charts.
+**Files.** Real Excel files: `.xlsx` import and export keep every sheet, formula, number format, column width and frozen header. CSV/TSV import (the delimiter is detected), CSV export per sheet, and a `.gridwork.json` file that keeps every sheet with its formulas, formatting and charts.
 
 ## Inside Claude
 
@@ -55,6 +61,7 @@ Without those capabilities (opened as a plain file, for example), the page falls
 |---|---|
 | `index.html` | The app: grid, editing, sheets, charts, saving and sync |
 | `engine.js` | Formula engine; works in the browser and in Node |
+| `xlsx.js` | `.xlsx` reader and writer, using the browser's built-in zip compression |
 | `sample.js` | The example workbook shown on first open |
 | `test.js` | Engine checks; run with `node test.js` |
 

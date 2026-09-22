@@ -43,11 +43,16 @@ const SAMPLE = {
   sheets: [
     {
       id: 'budget', name: 'Budget', cells: budget, widths: { A: 150, F: 140 }, chart: { range: 'A4:C11', type: 'bar' },
+      freeze: { rows: 4, cols: 0 }, filter: { range: 'A4:F11', cols: [] },
+      cf: [{ range: 'C5:C11', kind: 'formula', a: '=C5>B5', style: 'red' }, { range: 'F5:F11', kind: 'eq', a: 'OK', style: 'green' }],
       formats: [['A1', { b: 1 }], ['A2', { i: 1 }], ['A4:F4', { b: 1 }], ['A12:F12', { b: 1 }], ['B5:D12', { f: 'num' }],
         ['E5:E12', { f: 'pct' }], ['B14', { f: 'num' }], ['B15', { f: 'pct' }], ['B16', { f: 'num' }]],
     },
     {
       id: 'bills', name: 'Bills', cells: bills, widths: { A: 140, B: 120, C: 120, E: 130 }, chart: null,
+      freeze: { rows: 4, cols: 0 }, filter: { range: 'A4:E9', cols: [] },
+      cf: [{ range: 'E5:E9', kind: 'contains', a: 'Overdue', style: 'red' }, { range: 'E5:E9', kind: 'contains', a: 'this week', style: 'amber' },
+        { range: 'D5:D9', kind: 'scale', style: 'redgreen' }],
       formats: [['A1', { b: 1 }], ['A2', { i: 1 }], ['A4:E4', { b: 1 }], ['A11:B11', { b: 1 }], ['B5:B11', { f: 'num' }],
         ['C5:C9', { f: 'date' }], ['C12', { f: 'date' }], ['B13', { f: 'pct' }], ['B15', { f: 'date' }], ['B16', { f: 'date' }]],
     },

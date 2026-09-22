@@ -652,19 +652,26 @@ class Sheet {
   set(k, raw) {
     raw = raw == null ? '' : String(raw);
     if (raw === '') this.cells.delete(k); else this.cells.set(k, compile(raw));
+    this.book.dirty = true; // the next read recalculates, so nothing ever sees a stale value
   }
   raw(k) { const c = this.cells.get(k); return c ? c.raw : ''; }
   recalc() { this.book.recalc(); }
   value(k) { return this.book.value(this, k); }
+  // A formula that lives nowhere (conditional-formatting rules), evaluated as if it sat on this sheet.
+  evalFormula(raw) {
+    try { return finalValue(evaluate(parse(String(raw).replace(/^=/, '')), this)); }
+    catch (e) { return new Err('#ERROR!', e.message); }
+  }
 }
 class Workbook {
-  constructor() { this.sheets = []; this.busy = new Set(); }
+  constructor() { this.sheets = []; this.busy = new Set(); this.dirty = false; }
   add(name, id = 's' + Math.random().toString(36).slice(2, 9)) { const sh = new Sheet(this, id, name); this.sheets.push(sh); return sh; }
   remove(id) { this.sheets = this.sheets.filter(s => s.id !== id); }
   get(id) { return this.sheets.find(s => s.id === id); }
   byName(name) { const n = name.toLowerCase(); return this.sheets.find(s => s.name.toLowerCase() === n); }
   // ponytail: full recalc of every sheet on each edit (~ms for thousands of cells); dependency graph if books get huge.
   recalc() {
+    this.dirty = false;
     for (const s of this.sheets) s.vals.clear();
     for (const s of this.sheets) {
       // Row-major order keeps long fill-down chains (A2=A1+1 …) shallow on the call stack.
@@ -673,6 +680,7 @@ class Workbook {
     }
   }
   value(sh, k) {
+    if (this.dirty) this.recalc();
     const cached = sh.vals.get(k);
     if (cached !== undefined) return cached;
     const cell = sh.cells.get(k);
@@ -737,6 +745,38 @@ function renameRefs(raw, oldName, newName) {
   return '=' + out;
 }
 
+// Rows or columns inserted or deleted: spec = { sheet, axis: 'r' | 'c', at, n, del }. References into that sheet
+// follow their cells ($-anchored ones too, as in Excel); ranges grow or shrink, and ones that lose every cell become #REF!.
+function adjustRefs(raw, spec, home) {
+  if (raw[0] !== '=') return raw;
+  let toks;
+  try { toks = tokenize(raw.slice(1)); } catch { return raw; }
+  const on = spec.sheet.toLowerCase(), end = spec.at + spec.n;
+  const parts = t => { const m = /^(\$?)([A-Za-z]+)(\$?)(\d+)$/.exec(t.cell); return { ac: m[1], c: colIndex(m[2]), ar: m[3], r: +m[4] - 1 }; };
+  const text = (t, p) => t.pre + p.ac + colName(p.c) + p.ar + (p.r + 1);
+  const edits = [];
+  for (let i = 0; i < toks.length; i++) {
+    const a = toks[i];
+    if (a.k !== 'ref') continue;
+    const b = toks[i + 1]?.v === ':' && toks[i + 2]?.k === 'ref' ? toks[i + 2] : null;
+    if (b) i += 2;
+    if ((a.sheet || home).toLowerCase() !== on) continue;
+    const pa = parts(a), pb = b ? parts(b) : pa, x = spec.axis;
+    const lo = Math.min(pa[x], pb[x]), hi = Math.max(pa[x], pb[x]);
+    let nlo, nhi;
+    if (!spec.del) { nlo = lo >= spec.at ? lo + spec.n : lo; nhi = hi >= spec.at ? hi + spec.n : hi; }
+    else if (lo >= spec.at && hi < end) { edits.push([a.s, (b || a).e, '#REF!']); continue; }
+    else { nlo = lo < spec.at ? lo : lo >= end ? lo - spec.n : spec.at; nhi = hi < spec.at ? hi : hi >= end ? hi - spec.n : spec.at - 1; }
+    const aIsLo = pa[x] <= pb[x];
+    pa[x] = aIsLo ? nlo : nhi;
+    edits.push([a.s, a.e, text(a, pa)]);
+    if (b) { pb[x] = aIsLo ? nhi : nlo; edits.push([b.s, b.e, text(b, pb)]); }
+  }
+  let out = raw.slice(1);
+  for (const [s, e, t] of edits.sort((p, q) => q[0] - p[0])) out = out.slice(0, s) + t + out.slice(e);
+  return '=' + out;
+}
+
 // Cell and range references inside a formula, with their text positions (for colored highlights).
 function refSpans(f) {
   if (f[0] !== '=') return [];
@@ -754,6 +794,6 @@ function refSpans(f) {
   return out;
 }
 
-const api = { Sheet, Workbook, Err, RangeVal, parse, tokenize, shift, tidy, refSpans, renameRefs, quoteSheet, literal, parseDate, isoDate, fmtGeneral, colName, colIndex, key, parseKey, config, FUNCS, HELP };
+const api = { Sheet, Workbook, Err, RangeVal, parse, tokenize, shift, tidy, refSpans, renameRefs, adjustRefs, quoteSheet, toBool, literal, parseDate, isoDate, fmtGeneral, colName, colIndex, key, parseKey, config, FUNCS, HELP };
 if (typeof module === 'object' && module.exports) module.exports = api; else root.Engine = api;
 })(this);
