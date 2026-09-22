@@ -261,6 +261,9 @@ select.tb { padding: 0 4px; border-color: var(--line); background: var(--paper);
 .row { display: flex; gap: 8px; align-items: center; }
 #askStatus { min-height: 1.4em; margin: 10px 0 0; color: var(--ink-2); font-size: 13px; }
 .fine { margin: 8px 0 0; color: var(--muted); font-size: 12px; }
+#apiKey { width: 100%; box-sizing: border-box; padding: 6px 10px; border: 1px solid var(--line-2); border-radius: 6px; background: var(--head); font-family: var(--mono); font-size: 12.5px; }
+#keyRow .fine { margin: 6px 0 10px; }
+#keyRow a { color: var(--accent); }
 
 #toast { position: fixed; left: 50%; bottom: 48px; transform: translateX(-50%); z-index: 40; max-width: calc(100vw - 32px); box-sizing: border-box; padding: 9px 14px; border-radius: 8px; background: var(--ink); color: var(--paper); font-size: 13px; box-shadow: var(--shadow); }
 #kbd { position: fixed; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; resize: none; border: 0; padding: 0; }
@@ -425,6 +428,10 @@ select.tb { padding: 0 4px; border-color: var(--line); background: var(--paper);
           <button class="x" data-close="askPanel" aria-label="Close">×</button>
         </div>
         <p class="sub">Describe a sheet. Claude writes it as a new tab with live formulas, and can reference the sheets you already have.</p>
+        <div id="keyRow" hidden>
+          <input id="apiKey" type="password" placeholder="Your Anthropic API key (sk-ant-…)" autocomplete="off" spellcheck="false" aria-label="Anthropic API key">
+          <p class="fine">Saved only in this browser and sent only to Anthropic, billed to your own API account. <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">Get a key</a> · clear the box to forget it.</p>
+        </div>
         <textarea id="askText" placeholder="e.g. Home loan of 250,000 at 7.5% over 20 years, one row per year with interest, principal and balance"></textarea>
         <div class="chips" id="chips">
           <button>Monthly summary of my Budget sheet</button>
@@ -438,7 +445,7 @@ select.tb { padding: 0 4px; border-color: var(--line); background: var(--paper);
           <button class="tb" id="askStop" hidden>Stop</button>
         </div>
         <p id="askStatus" aria-live="polite"></p>
-        <p class="fine">Adds a new sheet · nothing you have is overwritten · uses your Claude usage</p>
+        <p class="fine">Adds a new sheet · nothing you have is overwritten · <span id="askBill">uses your Claude usage</span></p>
       </section>
     </aside>
   </div>
@@ -2517,7 +2524,51 @@ const AI_ERRORS = {
   bad_shape: 'The reply wasn’t a usable sheet. Try again, or ask for something smaller.',
   empty_completion: 'Claude returned nothing. Try a simpler request.',
   prompt_too_large: 'That description is too long. Shorten it and retry.',
+  bad_key: 'Anthropic rejected that API key. Check it and paste it again.',
 };
+// Outside Claude: the same sample.json() contract, but calling the Anthropic API straight from the browser with the visitor's key.
+// ponytail: the key lives in localStorage, readable by any page on this origin (all of a github.io user's sites); a server proxy would hide it.
+const KEY_STORE = 'gridwork:anthropicKey';
+const apiKey = () => { try { return localStorage.getItem(KEY_STORE) || ''; } catch { return ''; } };
+const byokSample = {
+  async json(prompt, { signal, onText } = {}) {
+    const fail = (code, detail) => Object.assign(new Error(code), { code, detail });
+    const lost = e => e?.code ? e : fail(signal?.aborted ? 'cancelled' : 'network');
+    let r;
+    try {
+      r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST', signal,
+        headers: { 'content-type': 'application/json', 'x-api-key': apiKey(), 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 16000, stream: true, messages: [{ role: 'user', content: prompt + '\n\nReply with the JSON object only.' }] }),
+      });
+    } catch (e) { throw lost(e); }
+    if (!r.ok) {
+      const msg = await r.json().then(j => j?.error?.message, () => '');
+      throw fail({ 401: 'bad_key', 403: 'bad_key', 413: 'prompt_too_large', 429: 'rate_limited', 529: 'rate_limited' }[r.status] || 'api', msg && `Anthropic: ${msg}`);
+    }
+    const rd = r.body.pipeThrough(new TextDecoderStream()).getReader();
+    let buf = '', text = '', stop = '';
+    try {
+      for (;;) {
+        const { value, done } = await rd.read();
+        if (done) break;
+        const lines = (buf += value).split('\n');
+        buf = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data:')) continue;
+          const ev = JSON.parse(line.slice(5));
+          if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta') { text += ev.delta.text; onText?.({ text }); }
+          else if (ev.type === 'message_delta') stop = ev.delta?.stop_reason || stop;
+          else if (ev.type === 'error') throw fail(ev.error?.type === 'overloaded_error' ? 'rate_limited' : 'api', ev.error?.message && `Anthropic: ${ev.error.message}`);
+        }
+      }
+    } catch (e) { throw lost(e); }
+    if (stop === 'refusal') throw fail('refused');
+    if (!text.trim()) throw fail('empty_completion');
+    try { return JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1)); } catch { throw fail('invalid_json'); }
+  },
+};
+
 const AI_GONE = ['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed'];
 function workbookContext() {
   let out = '';
@@ -2602,6 +2653,7 @@ async function askClaude() {
   const req = $('#askText').value.trim(), st = $('#askStatus');
   if (!req) { $('#askText').focus(); st.textContent = 'Describe the sheet first — or pick one of the examples.'; return; }
   if (readOnly) { st.textContent = readOnly; return; }
+  if (sample === byokSample && !apiKey()) { st.textContent = 'Paste your Anthropic API key first.'; $('#apiKey').focus(); return; }
   if (edit) commitEdit();
   const prompt = aiPrompt(req);
   const sh = addSheet('Claude draft');
@@ -2640,7 +2692,7 @@ async function askClaude() {
     const code = e?.code;
     if (code === 'cancelled') st.textContent = 'Stopped. Nothing was added.';
     else if (AI_GONE.includes(code)) { st.textContent = 'Claude isn’t available in this view.'; $('#askBtn').hidden = true; }
-    else st.textContent = AI_ERRORS[code] || 'Couldn’t reach Claude. Check your connection and try again.';
+    else st.textContent = AI_ERRORS[code] || e?.detail || 'Couldn’t reach Claude. Check your connection and try again.';
   } finally {
     $('#askGo').disabled = false;
     $('#askStop').hidden = true;
@@ -2682,7 +2734,15 @@ if (window.claude?.use) {
   tabs.set(sh.id, newTab(0));
   activate(sh.id);
   connect();
-} else startLocal();
+} else {
+  // Outside Claude (GitHub Pages, a local server): Build with Claude runs on the visitor's own API key.
+  sample = byokSample;
+  $('#askBtn').hidden = $('#keyRow').hidden = false;
+  $('#askBill').textContent = 'uses your API credit';
+  $('#apiKey').value = apiKey();
+  $('#apiKey').onchange = e => { try { const k = e.target.value.trim(); k ? localStorage.setItem(KEY_STORE, k) : localStorage.removeItem(KEY_STORE); } catch { /* storage blocked */ } };
+  startLocal();
+}
 focusGrid();
 })();
 </script>

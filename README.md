@@ -57,6 +57,8 @@ When `index.html` is published as a Claude artifact with the `db`, `room`, `user
 
 Without those capabilities (opened as a plain file, for example), the page falls back to saving in the browser.
 
+**Outside Claude** (GitHub Pages or a local server), Build with Claude asks for your own [Anthropic API key](https://console.anthropic.com/settings/keys). The key is kept in your browser's storage and sent only to `api.anthropic.com`, and requests are billed to your API account. Anyone who can run scripts on the same origin can read it, so use a key with a spending limit.
+
 ## Files
 
 | File | What it is |
